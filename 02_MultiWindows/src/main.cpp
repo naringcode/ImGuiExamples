@@ -13,6 +13,10 @@
 
 std::vector<std::string> g_WindowVec;
 
+float g_RectColor[3];
+float g_RectSize[2];
+float g_RectPos[2];
+
 int main(int argc, char* argv[])
 {
     // Setup SDL
@@ -52,6 +56,17 @@ int main(int argc, char* argv[])
         return -1;
     }
 
+    g_RectColor[0] = 1.0f;
+    g_RectColor[1] = 1.0;
+    g_RectColor[2] = 1.0f;
+
+    g_RectSize[0] = 1280.0f / 10.0f;
+    g_RectSize[1] = 720.0f / 10.0f;
+
+    g_RectPos[0] = 1280.0f / 2.0f;
+    g_RectPos[1] = 720.0f / 2.0f;
+
+    //
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
 
@@ -118,6 +133,10 @@ int main(int argc, char* argv[])
                 g_WindowVec.pop_back();
             }
 
+            ImGui::ColorEdit3("Color", g_RectColor);
+            ImGui::DragFloat2("Size", g_RectSize);
+            ImGui::DragFloat2("Pos", g_RectPos);
+
             ImGui::End();
         }
 
@@ -132,10 +151,22 @@ int main(int argc, char* argv[])
 
         // Rendering
         ImGui::Render();
-        SDL_RenderSetScale(renderer, io.DisplayFramebufferScale.x, io.DisplayFramebufferScale.y);
-
+        
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
         SDL_RenderClear(renderer);
+
+        SDL_SetRenderDrawColor(renderer, 
+                g_RectColor[0] * 255.0f, g_RectColor[1] * 255.0f, g_RectColor[2] * 255.0f, 255);
+        
+        SDL_Rect sdlRect;
+        {
+            sdlRect.w = g_RectSize[0];
+            sdlRect.h = g_RectSize[1];
+            sdlRect.x = g_RectPos[0] - g_RectSize[0] / 2.0f;
+            sdlRect.y = g_RectPos[1] - g_RectSize[1] / 2.0f;
+        };
+
+        SDL_RenderFillRect(renderer, &sdlRect);
 
         ImGui_ImplSDLRenderer2_RenderDrawData(ImGui::GetDrawData());
         SDL_RenderPresent(renderer);
