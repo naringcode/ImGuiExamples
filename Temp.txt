@@ -1,0 +1,2 @@
+ini 설정 방법
+https://github.com/ocornut/imgui/issues/4294

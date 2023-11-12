@@ -1,13 +1,13 @@
 // C++
 #include <iostream>
 
+// SDL
+#include <SDL2/SDL.h>
+
 // imgui
 #include <imgui.h>
 #include <imgui_impl_sdl2.h>
 #include <imgui_impl_sdlrenderer2.h>
-
-// SDL
-#include <SDL2/SDL.h>
 
 int main(int argc, char* argv[])
 {
