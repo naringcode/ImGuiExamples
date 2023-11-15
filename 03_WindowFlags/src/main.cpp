@@ -11,12 +11,6 @@
 #include <imgui_impl_sdl2.h>
 #include <imgui_impl_sdlrenderer2.h>
 
-std::vector<std::string> g_WindowVec;
-
-float g_RectColor[3];
-float g_RectSize[2];
-float g_RectPos[2];
-
 int main(int argc, char* argv[])
 {
     // Setup SDL
@@ -55,16 +49,6 @@ int main(int argc, char* argv[])
 
         return -1;
     }
-
-    g_RectColor[0] = 1.0f;
-    g_RectColor[1] = 1.0;
-    g_RectColor[2] = 1.0f;
-
-    g_RectSize[0] = 1280.0f / 10.0f;
-    g_RectSize[1] = 720.0f / 10.0f;
-
-    g_RectPos[0] = 1280.0f / 2.0f;
-    g_RectPos[1] = 720.0f / 2.0f;
 
     //
     IMGUI_CHECKVERSION();
@@ -111,62 +95,45 @@ int main(int argc, char* argv[])
         ImGui_ImplSDLRenderer2_NewFrame();
         ImGui_ImplSDL2_NewFrame();
         ImGui::NewFrame();
-        
+
         // Main Window
         {
-            ImGui::Begin("Main");
+            int width;
+            int height;
 
-            ImGui::Text("Number Of Windows : %d", 1 + g_WindowVec.size());
+            SDL_GetWindowSize(window, &width, &height);
 
-            if (true == ImGui::Button("Push"))
+            ImGui::SetNextWindowPos(ImVec2{ 10.0f, 10.0f });
+            ImGui::SetNextWindowSize(ImVec2{ (float)width - 20.0f, (float)height - 20.0f });
+
+            if (true == ImGui::Begin("Window"))
             {
-                std::string str = "Hello ";
-                str += std::to_string(g_WindowVec.size());
-
-                g_WindowVec.push_back(str);
+                ImGui::Text("Hello ImGui");
             }
 
-            ImGui::SameLine();
+            // 최소화 버튼 제거 밑 유저가 임의로 윈도우 움직이지 못 하게 막기.
+            // SetNextWindowXXX() 주석치고 테스트
+            // if (true == ImGui::Begin("Window", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse))
+            // {
+            //     ImGui::Text("Hello ImGui");
+            // }
 
-            if (true == ImGui::Button("Pop") && g_WindowVec.size() > 0)
-            {
-                g_WindowVec.pop_back();
-            }
+            // 윈도우 타이틀 옵션 전부 제거
+            // if (true == ImGui::Begin("Window", nullptr, ImGuiWindowFlags_NoDecoration))
+            // {
+            //     ImGui::Text("Hello ImGui");
+            // }
 
-            ImGui::ColorEdit3("Color", g_RectColor);
-            ImGui::DragFloat2("Size", g_RectSize);
-            ImGui::DragFloat2("Pos", g_RectPos);
-
-            ImGui::End();
-        }
-
-        for (const std::string& str : g_WindowVec)
-        {
-            ImGui::Begin(str.c_str());
-
-            ImGui::Text("Lorem ipsum");
+            // 다양한 윈도우 플래그 테스트하기!
 
             ImGui::End();
         }
 
         // Rendering
         ImGui::Render();
-        
+
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
         SDL_RenderClear(renderer);
-
-        SDL_SetRenderDrawColor(renderer, 
-                g_RectColor[0] * 255.0f, g_RectColor[1] * 255.0f, g_RectColor[2] * 255.0f, 255);
-        
-        SDL_Rect sdlRect;
-        {
-            sdlRect.w = g_RectSize[0];
-            sdlRect.h = g_RectSize[1];
-            sdlRect.x = g_RectPos[0] - g_RectSize[0] / 2.0f;
-            sdlRect.y = g_RectPos[1] - g_RectSize[1] / 2.0f;
-        };
-
-        SDL_RenderFillRect(renderer, &sdlRect);
 
         ImGui_ImplSDLRenderer2_RenderDrawData(ImGui::GetDrawData());
         SDL_RenderPresent(renderer);
