@@ -103,6 +103,8 @@ int main(int argc, char* argv[])
 
         // Main Window
         {
+            static bool s_ScrollToBottom = false;
+
             int width;
             int height;
 
@@ -119,6 +121,8 @@ int main(int argc, char* argv[])
                 if (true == ImGui::Button("Push") && g_Str.size() > 0)
                 {
                     g_StrVec.push_back(g_Str);
+
+                    s_ScrollToBottom = true; // 텍스트를 입력하면 스크롤 최대로
                 }
 
                 ImGui::SameLine();
@@ -135,13 +139,24 @@ int main(int argc, char* argv[])
                 }
 
                 ImGui::NewLine();
-
                 ImGui::Text("Stack Size : %d", g_StrVec.size());
-
-                for (auto str : g_StrVec)
+                
+                ImGui::BeginChild("Child", { 200, 100 }, true);
                 {
-                    ImGui::BulletText(str.c_str());
+                    for (auto str : g_StrVec)
+                    {
+                        ImGui::BulletText(str.c_str());
+                    }
+
+                    // 스크롤 최대로(1회)
+                    if (true == s_ScrollToBottom)
+                    {
+                        ImGui::SetScrollHereY(1.0f);
+
+                        s_ScrollToBottom = false;
+                    }
                 }
+                ImGui::EndChild();
             }
 
             ImGui::End();
