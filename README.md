@@ -18,3 +18,4 @@
 - 컴파일되어 변환되는 중간 단계의 파일은 솔루션이 위치한 bin-int 폴더에 위치
 - 실행파일은 솔루션이 위치한 bin 폴더에 위치
 - 작업하던 환경을 유지하기 위해 imgui.ini 파일은 그대로 커밋됨
+- 필요한 것은 Demo에서 확인(https://github.com/ocornut/imgui/blob/master/imgui_demo.cpp)
