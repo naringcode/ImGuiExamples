@@ -10,6 +10,7 @@
 #include <imgui.h>
 #include <imgui_impl_sdl2.h>
 #include <imgui_impl_sdlrenderer2.h>
+#include <imgui_stdlib.h> // std::string을 TextInput()에 적용하기 위함
 
 int main(int argc, char* argv[])
 {
@@ -98,84 +99,83 @@ int main(int argc, char* argv[])
         ImGui::NewFrame();
 
         // Main Window
+        int width;
+        int height;
+
+        SDL_GetWindowSize(window, &width, &height);
+
+        ImGui::SetNextWindowPos(ImVec2{ 10.0f, 10.0f });
+        ImGui::SetNextWindowSize(ImVec2{ (float)width - 20.0f, (float)height - 20.0f });
+
+        if (true == ImGui::Begin("Window", nullptr, ImGuiWindowFlags_NoDecoration - ImGuiWindowFlags_NoTitleBar))
         {
-            static bool s_TagA = false;
-            static bool s_TagB = false;
-            static bool s_TagC = false;
-            static bool s_TagD = false;
+            static bool  s_CheckDisabled = true;
+            static float s_SpacingX = ImGui::GetStyle().ItemSpacing.x;
+            static float s_SpacingY = ImGui::GetStyle().ItemSpacing.y;
 
-            int width;
-            int height;
+            static std::string s_InputStr = "Lorem ipsum dolor sit amet";
 
-            SDL_GetWindowSize(window, &width, &height);
-
-            ImGui::SetNextWindowPos(ImVec2{ 10.0f, 10.0f });
-            ImGui::SetNextWindowSize(ImVec2{ (float)width - 20.0f, (float)height - 20.0f });
-
-            if (true == ImGui::Begin("Window"))
+            if (ImGui::Button("Toggle UIs"))
             {
-                // // 식별자를 공유하는 상태(이름이 같음)
-                // if (true == ImGui::Button("Button"))
-                // {
-                //     s_TagA = !s_TagA;
-                // }
-                // 
-                // // s_TagB는 반응하지 않는다.
-                // if (true == ImGui::Button("Button"))
-                // {
-                //     s_TagB = !s_TagB;
-                // }
-
-                // 다음과 같이 ID를 임의로 부여하는 방법도 있다.
-                ImGui::PushID(0);
-                if (true == ImGui::Button("Button"))
-                {
-                    s_TagA = !s_TagA;
-                }
-                ImGui::PopID();
-                
-                ImGui::PushID(1);
-                if (true == ImGui::Button("Button"))
-                {
-                    s_TagB = !s_TagB;
-                }
-                ImGui::PopID();
-
-                // 다음과 같이 ##을 쓰면 별도의 ID로 식별하지만 뒤의 문자열은 렌더링하지 않는다.
-                if (true == ImGui::Button("Button##01"))
-                {
-                    s_TagC = !s_TagC;
-                }
-
-                if (true == ImGui::Button("Button##02"))
-                {
-                    s_TagD = !s_TagD;
-                }
-
-                // Show
-                if (true == s_TagA)
-                {
-                    ImGui::Text("Im TagA");
-                }
-                
-                if (true == s_TagB)
-                {
-                    ImGui::Text("Im TagB");
-                }
-
-                if (true == s_TagC)
-                {
-                    ImGui::Text("Im TagC");
-                }
-
-                if (true == s_TagD)
-                {
-                    ImGui::Text("Im TagD");
-                }
+                s_CheckDisabled = !s_CheckDisabled;
             }
 
-            ImGui::End();
+            ImGui::PushItemWidth(120.0f);
+            {
+                ImGui::SliderFloat("ItemSpacingX", &s_SpacingX, 0.0f, 200.0f);
+
+                ImGui::SameLine();
+
+                ImGui::SliderFloat("ItemSpacingY", &s_SpacingY, 0.0f, 50.0f);
+            }
+            ImGui::PopItemWidth();
+
+            ImGui::Separator();
+
+            // Disabled
+            ImGui::BeginDisabled(s_CheckDisabled);
+            {
+                ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2{ s_SpacingX, s_SpacingY });
+                
+                ImGui::Text("Hello World!");
+
+                ImGui::SameLine();
+
+                ImGui::Text(s_InputStr.c_str());
+
+                ImGui::SameLine();
+
+                ImGui::Text("Hello World!");
+
+                ImGui::Button("Button##01");
+                ImGui::InputText("InputText##01", &s_InputStr);
+
+                for (int i = 1; i <= 12; i++)
+                {
+                    std::string str = "This Text ";
+                    str += (char)(i + 'A' - 1);
+
+                    ImGui::Text(str.c_str());
+                    
+                    if (0 != i % 3)
+                    {
+                        ImGui::SameLine();
+                    }
+                }
+
+                ImGui::PopStyleVar();
+            }
+            ImGui::EndDisabled();
+
+            // 빛의 3속성 : 색상(Hue), 채도(Saturation), 명도(Value)
+
+            // https://github.com/ocornut/imgui/blob/master/imgui_demo.cpp
+            // 600 라인 부근 : IMGUI_DEMO_MARKER("Widgets/Basic/Buttons (Colored)");
+
+
         }
+
+        ImGui::End();
 
         // Rendering
         ImGui::Render();
