@@ -112,15 +112,9 @@ int main(int argc, char* argv[])
 
         if (true == ImGui::Begin("Window", nullptr, ImGuiWindowFlags_NoDecoration - ImGuiWindowFlags_NoTitleBar - ImGuiWindowFlags_NoResize))
         {
-            // 빛의 3속성 : 색상(Hue), 채도(Saturation), 명도(Value)
-
-            // https://github.com/ocornut/imgui/blob/master/imgui_demo.cpp
-            // 600 라인 부근 : IMGUI_DEMO_MARKER("Widgets/Basic/Buttons (Colored)");
-            
-
             // https://github.com/ocornut/imgui/blob/master/imgui_demo.cpp
             // 7920 라인 부근 : IMGUI_DEMO_MARKER("Examples/Custom Rendering");
-            
+
             // Primitives를 그리는 것? 직접적인 Function 없음.
             // DrawList를 써야 함.
             // 모든 Window는 고유한 DrawList를 가지고 있다.
@@ -132,7 +126,6 @@ int main(int argc, char* argv[])
 
                 // First Gradient
                 {
-                    // GetCursorScreenPos() : cursor position in absolute coordinates (useful to work with ImDrawList API)
                     static ImVec4 startColor{ 0.0f, 0.0f, 0.0f, 1.0f };
                     static ImVec4 endColor{ 1.0f, 1.0f, 1.0f, 1.0f };
 
@@ -143,11 +136,12 @@ int main(int argc, char* argv[])
 
                     ImGui::SameLine();
 
-                    ImVec2 leftTop     = ImGui::GetCursorScreenPos();
+                    // GetCursorScreenPos() : cursor position in absolute coordinates (useful to work with ImDrawList API)
+                    ImVec2 leftTop = ImGui::GetCursorScreenPos();
                     ImVec2 rightBottom = ImVec2{ leftTop.x + gradientSize.x, leftTop.y + gradientSize.y };
 
                     ImU32 startUColor = ImGui::GetColorU32(startColor);
-                    ImU32 endUColor   = ImGui::GetColorU32(endColor);
+                    ImU32 endUColor = ImGui::GetColorU32(endColor);
 
                     drawList->AddRectFilledMultiColor(leftTop, rightBottom, startUColor, endUColor, endUColor, startUColor);
 
@@ -167,14 +161,14 @@ int main(int argc, char* argv[])
 
                     ImGui::SameLine();
 
-                    ImVec2 leftTop     = ImGui::GetCursorScreenPos();
+                    ImVec2 leftTop = ImGui::GetCursorScreenPos();
                     ImVec2 rightBottom = ImVec2{ leftTop.x + gradientSize.x, leftTop.y + gradientSize.y };
 
                     ImU32 startUColor = ImGui::GetColorU32(startColor);
-                    ImU32 endUColor   = ImGui::GetColorU32(endColor);
+                    ImU32 endUColor = ImGui::GetColorU32(endColor);
 
                     drawList->AddRectFilledMultiColor(leftTop, rightBottom, startUColor, endUColor, endUColor, startUColor);
-                    
+
                     // 다음 위치로 커서를 위치시키기 위해서 사용(IsItemActive, IsItemHovered를 적용시키기에도 유용하다).
                     ImGui::InvisibleButton("##Gradient02", gradientSize);
 
@@ -210,35 +204,7 @@ int main(int argc, char* argv[])
                         }
                     }
                 }
-
-                ImVec2 winPos = ImGui::GetWindowPos();
-                ImVec2 drawPos = winPos;
-
-                drawList->AddLine(winPos + ImVec2{ 0.0f, ImGui::GetFrameHeight() + 10.f },
-                                  winPos + ImVec2{ ImGui::CalcItemWidth(), ImGui::GetFrameHeight() + 10.f }, 
-                                  IM_COL32_WHITE);
             }
-
-            // ImDrawList* drawList = ImGui::GetWindowDrawList();
-            // {
-            //     ImVec2 points[4];
-            //     {
-            //         points[0] = { 50.0f, 50.0f };
-            //         points[1] = { 150.0f, 100.0f };
-            //         points[2] = { 90.0f, 200.0f };
-            //         points[3] = { 50.0f, 50.0f };
-            //     }
-            // 
-            //     points[0] += points[0];
-            // 
-            //     drawList->AddDrawCmd();
-            // 
-            //     drawList->AddPolyline(points, 4, IM_COL32(255, 55, 55, 255), ImDrawFlags_None, 2);
-            // 
-            //     drawList->AddLine(ImVec2{ 30.0f, 80.0f }, ImVec2{ 200.0f, 200.0f }, IM_COL32_WHITE);
-            // 
-            //     drawList->AddRect(ImVec2{ 300.0f, 300.0f }, ImVec2{ 450.0f, 450.0f }, IM_COL32(55, 255, 55, 255), 2.0f, 0, 3.0f);
-            // }
         }
 
         ImGui::End();

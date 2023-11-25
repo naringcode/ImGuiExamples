@@ -120,7 +120,7 @@ int main(int argc, char* argv[])
                 s_CheckDisabled = !s_CheckDisabled;
             }
 
-            // 슬라이더 가로 길이 120으로 설정
+            // 슬라이더 가로 길이 120으로 설정(설정 정보를 스택에 쌓는 방식)
             ImGui::PushItemWidth(120.0f);
             {
                 ImGui::SliderFloat("Long Long ItemSpacingX", &s_SpacingX, 0.0f, 200.0f);
