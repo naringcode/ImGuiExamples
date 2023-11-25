@@ -107,10 +107,12 @@ int main(int argc, char* argv[])
 
         SDL_GetWindowSize(window, &width, &height);
 
-        ImGui::SetNextWindowPos(ImVec2{ 10.0f, 10.0f });
-        ImGui::SetNextWindowSize(ImVec2{ (float)width - 20.0f, (float)height - 20.0f });
+        ImGui::SetNextWindowPos(ImVec2{ 50.0f, 50.0f });
+        ImGui::SetNextWindowSize(ImVec2{ (float)width - 100.0f, (float)height - 100.0f });
 
-        if (true == ImGui::Begin("Window", nullptr, ImGuiWindowFlags_NoDecoration - ImGuiWindowFlags_NoTitleBar - ImGuiWindowFlags_NoResize))
+        if (true == ImGui::Begin("Window", nullptr, 
+                                 ImGuiWindowFlags_NoDecoration - ImGuiWindowFlags_NoTitleBar - ImGuiWindowFlags_NoResize
+                                 | ImGuiWindowFlags_NoBringToFrontOnFocus))
         {
             // https://github.com/ocornut/imgui/blob/master/imgui_demo.cpp
             // 7920 라인 부근 : IMGUI_DEMO_MARKER("Examples/Custom Rendering");
@@ -203,6 +205,65 @@ int main(int argc, char* argv[])
                             ImGui::EndTooltip();
                         }
                     }
+                }
+
+                ImGui::Separator();
+
+                ImGui::Text("Background / Foreground DrawList");
+                {
+                    static bool s_OpenWindow = false;
+
+                    static ImVec2 s_BGCenter{ 0.0f, 0.0f };
+                    static float  s_BGRadius = 200.0f;
+                    static ImVec4 s_BGColor{ 255.0f, 0.0f, 0.0f, 255.0f };
+                    static int    s_BGSegments  = 0;
+                    static float  s_BGThickness = 5.0f;
+
+                    static ImVec2 s_FGCenter{ 0.0f, 0.0f };
+                    static float  s_FGRadius = 100.0f;
+                    static ImVec4 s_FGColor{ 0.0f, 255.0f, 0.0f, 255.0f };
+                    static int    s_FGSegments = 0;
+                    static float  s_FGThickness = 5.0f;
+
+                    std::string buttonStr = s_OpenWindow ? "Close" : "Open";
+
+                    ImGui::SameLine();
+
+                    if (ImGui::Button(buttonStr.c_str()))
+                    {
+                        s_OpenWindow = !s_OpenWindow;
+                    }
+
+                    // s_OpenWindow가 열려 있는지 확인한 다음에 Begin()을 진행해야 한다.
+                    if (true == s_OpenWindow)
+                    {
+                        if (ImGui::Begin("BG/FG DrawList", &s_OpenWindow))
+                        {
+                            ImGui::Text("Hello");
+                        }
+
+                        ImVec2 windowPos  = ImGui::GetWindowPos();
+                        ImVec2 windowSize = ImGui::GetWindowSize();
+
+                        ImVec2 windowCenter = windowPos + (windowSize / 2);
+
+                        // Background
+                        {
+                            ImDrawList* bgDrawList = ImGui::GetBackgroundDrawList();
+                            
+                            bgDrawList->AddCircle(s_BGCenter + windowCenter, s_BGRadius, ImGui::ColorConvertFloat4ToU32(s_BGColor), s_BGSegments, s_BGThickness);
+                        }
+
+                        // Foreground
+                        {
+                            ImDrawList* fgDrawList = ImGui::GetForegroundDrawList();
+
+                            fgDrawList->AddCircle(s_FGCenter + windowCenter, s_FGRadius, ImGui::ColorConvertFloat4ToU32(s_FGColor), s_FGSegments, s_FGThickness);
+                        }
+
+                        ImGui::End();
+                    }
+
                 }
             }
         }
