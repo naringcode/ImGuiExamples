@@ -225,7 +225,7 @@ int main(int argc, char* argv[])
                     static int    s_FGSegments = 0;
                     static float  s_FGThickness = 5.0f;
 
-                    std::string buttonStr = s_OpenWindow ? "Close" : "Open";
+                    std::string buttonStr = s_OpenWindow ? "Close##BGFG" : "Open##BGFG";
 
                     ImGui::SameLine();
 
@@ -264,6 +264,33 @@ int main(int argc, char* argv[])
                         ImGui::End();
                     }
 
+                }
+
+                ImGui::Text("Canvas");
+                {
+                    // https://github.com/ocornut/imgui/blob/master/imgui_demo.cpp#L8015
+                    // 8015 라인 부근
+                    static bool s_OpenWindow = false;
+
+                    std::string buttonStr = s_OpenWindow ? "Close##Canvas" : "Open##Canvas";
+
+                    ImGui::SameLine();
+
+                    if (ImGui::Button(buttonStr.c_str()))
+                    {
+                        s_OpenWindow = !s_OpenWindow;
+                    }
+
+                    // s_OpenWindow가 열려 있는지 확인한 다음에 Begin()을 진행해야 한다.
+                    if (true == s_OpenWindow)
+                    {
+                        if (ImGui::Begin("Canvas", &s_OpenWindow))
+                        {
+                            ImGui::Text("Hello");
+                        }
+
+                        ImGui::End();
+                    }
                 }
             }
         }
