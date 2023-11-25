@@ -196,7 +196,7 @@ int main(int argc, char* argv[])
                                 buttonColor.w += perColor.w * diff;
                             }
 
-                            ImGui::Text("R(%d) G(%d) B(%d) A(%d)", (int)buttonColor.x, (int)buttonColor.y, (int)buttonColor.z, (int)buttonColor.w);
+                            ImGui::Text("R(%d) G(%d) B(%d) A(%d)", (int)(buttonColor.x * 255.f), (int)(buttonColor.y * 255.f), (int)(buttonColor.z * 255.f), (int)(buttonColor.w * 255.f));
                             ImGui::SameLine();
                             ImGui::ColorButton("TooltipColorButton", buttonColor);
 
