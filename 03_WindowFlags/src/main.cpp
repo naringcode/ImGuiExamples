@@ -103,12 +103,37 @@ int main(int argc, char* argv[])
 
             SDL_GetWindowSize(window, &width, &height);
 
-            ImGui::SetNextWindowPos(ImVec2{ 10.0f, 10.0f });
-            ImGui::SetNextWindowSize(ImVec2{ (float)width - 20.0f, (float)height - 20.0f });
+            static bool fullScreenOnOff = false;
 
-            if (true == ImGui::Begin("Window"))
+            if (false == fullScreenOnOff)
             {
-                ImGui::Text("Hello ImGui");
+                ImGui::SetNextWindowPos(ImVec2{ 10.0f, 10.0f });
+                ImGui::SetNextWindowSize(ImVec2{ (float)width - 20.0f, (float)height - 20.0f });
+
+                if (true == ImGui::Begin("Window"))
+                {
+                    ImGui::Text("Hello ImGui");
+
+                    if (ImGui::Button("Full Screen On"))
+                    {
+                        fullScreenOnOff = true;
+                    }
+                }
+            }
+            else
+            {
+                ImGui::SetNextWindowPos(ImVec2{ 0.0f, 0.0f });
+                ImGui::SetNextWindowSize(ImVec2{ (float)width, (float)height });
+
+                if (true == ImGui::Begin("Window", nullptr, ImGuiWindowFlags_NoDecoration))
+                {
+                    ImGui::Text("Hello ImGui");
+
+                    if (ImGui::Button("Full Screen Off"))
+                    {
+                        fullScreenOnOff = false;
+                    }
+                }
             }
 
             // 최소화 버튼 제거 밑 유저가 임의로 윈도우 움직이지 못 하게 막기.

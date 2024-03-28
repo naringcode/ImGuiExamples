@@ -6,6 +6,9 @@ MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "01_Demo", "01_Demo\01_Demo.vcxproj", "{AADF4949-BD33-4F42-9794-E94BFB23068B}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "00_Basic", "00_Basic", "{9AFF9EBD-24FD-45C6-9D68-D68A9938230D}"
+	ProjectSection(SolutionItems) = preProject
+		Memo.txt = Memo.txt
+	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "01_Widget", "01_Widget", "{852B2F4B-6F1D-4ED3-8371-92D87F58C1E3}"
 EndProject

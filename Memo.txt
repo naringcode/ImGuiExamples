@@ -1,0 +1,29 @@
+ImGui::Begin()이 창을 생성하지 않더라도 ImGui::End()는 호출되어야 한다.
+
+아래와 같이 작성하면 안 된다.
+
+code) Bad
+--------------------------------------------------
+bool openChk = ImGui::Begin("Window", &showWindow, ImGuiWindowFlags_XXX);
+if (true == openChk)
+{
+    // Do Something
+
+    ImGui::End();
+}
+--------------------------------------------------
+
+다음과 같이 작성하도록 한다.
+
+code) Good
+--------------------------------------------------
+bool openChk = ImGui::Begin("Window", &showWindow, ImGuiWindowFlags_XXX);
+if (true == openChk)
+{
+    // Do Something
+}
+
+ImGui::End();
+--------------------------------------------------
+
+##################################################

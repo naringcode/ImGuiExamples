@@ -149,7 +149,7 @@ int main(int argc, char* argv[])
 
                     // 다음 위치로 커서를 위치시키기 위해서 사용(IsItemActive, IsItemHovered를 적용시키기에도 유용하다).
                     ImGui::InvisibleButton("##Gradient01", gradientSize);
-                    ImGui::SetItemTooltip("First Gradient");
+                    ImGui::SetItemTooltip("First Gradient"); // 보이지 않는 임의의 버튼을 대상으로 Tooltip 설정
                 }
 
                 // Second Gradient
