@@ -171,6 +171,8 @@ int main(int argc, char* argv[])
 
         ImGui::End();
 
+        // ImGui::EndFrame(); // NewFrame()과 매칭(Render()에서 자동으로 호출하기 때문에 안 써도 됨
+
         // Rendering
         ImGui::Render();
 

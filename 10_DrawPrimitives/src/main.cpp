@@ -284,10 +284,12 @@ int main(int argc, char* argv[])
                     // s_OpenWindow가 열려 있는지 확인한 다음에 Begin()을 진행해야 한다.
                     if (true == s_OpenWindow)
                     {
-                        if (ImGui::Begin("Canvas", &s_OpenWindow))
+                        if (ImGui::Begin("Canvas", &s_OpenWindow, ImGuiWindowFlags_AlwaysAutoResize))
                         {
                             ImGui::Text("Hello");
                         }
+
+                        ImGui::Text("Mouse Left: drag to add lines,\nMouse Right: drag to scroll, click for context menu.");
 
                         ImGui::End();
                     }
@@ -296,6 +298,8 @@ int main(int argc, char* argv[])
         }
 
         ImGui::End();
+
+        // ImGui::EndFrame(); // NewFrame()과 매칭(Render()에서 자동으로 호출하기 때문에 안 써도 됨
 
         // Rendering
         ImGui::Render();

@@ -107,6 +107,10 @@ int main(int argc, char* argv[])
         ImGui::SetNextWindowPos(ImVec2{ 10.0f, 10.0f });
         ImGui::SetNextWindowSize(ImVec2{ (float)width - 20.0f, (float)height - 20.0f });
 
+        /**
+         * 여기선 Tooltip을 Window 내부에 작성했지만 단독으로 작성해도 뜨긴 한다.
+         * 따라서 필요하다면 굳이 Window를 작성하지 않고 Tooltip만 표기해도 된다.
+         */
         if (true == ImGui::Begin("Window", nullptr, ImGuiWindowFlags_NoDecoration - ImGuiWindowFlags_NoTitleBar))
         {
             // -----
@@ -176,6 +180,8 @@ int main(int argc, char* argv[])
         }
 
         ImGui::End();
+
+        // ImGui::EndFrame(); // NewFrame()과 매칭(Render()에서 자동으로 호출하기 때문에 안 써도 됨
 
         // Rendering
         ImGui::Render();

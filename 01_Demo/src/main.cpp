@@ -61,12 +61,10 @@ int main(int argc, char* argv[])
 
     // Setup Dear ImGui context
     IMGUI_CHECKVERSION();
-    ImGui::CreateContext();
+    ImGui::CreateContext(); // Global Context
 
     ImGuiIO& io = ImGui::GetIO();
     {
-        (void)io;
-
         io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;   // Enable Keyboard Controls
         io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;    // Enable Gamepad Controls
     }
@@ -98,8 +96,16 @@ int main(int argc, char* argv[])
     //ImFont* font = io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\ArialUni.ttf", 18.0f, nullptr, io.Fonts->GetGlyphRangesJapanese());
     //IM_ASSERT(font != nullptr);
 
-    // Setup Platform/Renderer backends
+    /**
+     * Setup Platform / Renderer backends
+     */
+    // Init Window
+    // ImGui_ImplSDL2_InitForOther(window);
+    // ImGui_ImplSDL2_InitForOpenGL(window, nullptr);
+    // ImGui_ImplSDL2_InitForVulkan(window);
     ImGui_ImplSDL2_InitForSDLRenderer(window, renderer);
+    
+    // Init Renderer
     ImGui_ImplSDLRenderer2_Init(renderer);
 
     // States
@@ -187,6 +193,8 @@ int main(int argc, char* argv[])
 
             ImGui::End();
         }
+
+        // ImGui::EndFrame(); // NewFrame()과 매칭(Render()에서 자동으로 호출하기 때문에 안 써도 됨
 
         // Rendering
         ImGui::Render();

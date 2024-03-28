@@ -56,7 +56,7 @@ int main(int argc, char* argv[])
 
     //
     IMGUI_CHECKVERSION();
-    ImGui::CreateContext();
+    ImGui::CreateContext(); // 전역 Context 생성
 
     ImGuiIO& io = ImGui::GetIO();
     {

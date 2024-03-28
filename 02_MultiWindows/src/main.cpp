@@ -68,7 +68,7 @@ int main(int argc, char* argv[])
 
     //
     IMGUI_CHECKVERSION();
-    ImGui::CreateContext();
+    ImGui::CreateContext(); // 전역 Context 생성
 
     ImGuiIO& io = ImGui::GetIO();
     {
@@ -80,6 +80,7 @@ int main(int argc, char* argv[])
     // Setup Platform/Renderer backends
     ImGui_ImplSDL2_InitForSDLRenderer(window, renderer);
     ImGui_ImplSDLRenderer2_Init(renderer);
+
     // Main Logic
     bool isRunning = true;
     while (true == isRunning)
@@ -148,6 +149,8 @@ int main(int argc, char* argv[])
 
             ImGui::End();
         }
+
+        // ImGui::EndFrame(); // NewFrame()과 매칭(Render()에서 자동으로 호출하기 때문에 안 써도 됨
 
         // Rendering
         ImGui::Render();
