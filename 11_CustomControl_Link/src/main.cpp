@@ -110,7 +110,7 @@ int main(int argc, char* argv[])
         ImGui::SetNextWindowPos(ImVec2{ 50.0f, 50.0f });
         ImGui::SetNextWindowSize(ImVec2{ (float)width - 100.0f, (float)height - 100.0f });
 
-        if (true == ImGui::Begin("Window", nullptr, 
+        if (true == ImGui::Begin("Window", nullptr,
                                  ImGuiWindowFlags_NoDecoration - ImGuiWindowFlags_NoTitleBar - ImGuiWindowFlags_NoResize
                                  | ImGuiWindowFlags_NoBringToFrontOnFocus))
         {
@@ -146,7 +146,7 @@ int main(int argc, char* argv[])
                     ImU32 endUColor = ImGui::GetColorU32(endColor);
 
                     drawList->AddRectFilledMultiColor(leftTop, rightBottom, startUColor, endUColor, endUColor, startUColor);
-                    
+
                     // 다음 위치로 커서를 위치시키기 위해서 사용(IsItemActive, IsItemHovered를 적용시키기에도 유용하다).
                     ImGui::InvisibleButton("##Gradient01", gradientSize);
                     ImGui::SetItemTooltip("First Gradient"); // 보이지 않는 임의의 버튼을 대상으로 Tooltip 설정
@@ -216,7 +216,7 @@ int main(int argc, char* argv[])
                     static ImVec2 s_BGCenter{ 0.0f, 0.0f };
                     static float  s_BGRadius = 200.0f;
                     static ImVec4 s_BGColor{ 255.0f, 0.0f, 0.0f, 255.0f };
-                    static int    s_BGSegments  = 0;
+                    static int    s_BGSegments = 0;
                     static float  s_BGThickness = 5.0f;
 
                     static ImVec2 s_FGCenter{ 0.0f, 0.0f };
@@ -242,7 +242,7 @@ int main(int argc, char* argv[])
                             ImGui::Text("Hello");
                         }
 
-                        ImVec2 windowPos  = ImGui::GetWindowPos();
+                        ImVec2 windowPos = ImGui::GetWindowPos();
                         ImVec2 windowSize = ImGui::GetWindowSize();
 
                         ImVec2 windowCenter = windowPos + (windowSize / 2);
@@ -250,7 +250,7 @@ int main(int argc, char* argv[])
                         // Background(전역)
                         {
                             ImDrawList* bgDrawList = ImGui::GetBackgroundDrawList();
-                            
+
                             bgDrawList->AddCircle(s_BGCenter + windowCenter, s_BGRadius, ImGui::ColorConvertFloat4ToU32(s_BGColor), s_BGSegments, s_BGThickness);
                         }
 

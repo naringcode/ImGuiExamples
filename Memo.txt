@@ -27,3 +27,51 @@ ImGui::End();
 --------------------------------------------------
 
 ##################################################
+
+InputText()에 std::string을 지정하기 위해선 다음 헤더 파일을 포함해야 함.
+
+- #include <imgui_stdlib.h>
+
+
+ImVec 계열에 연산자를 적용시키기 위해선 다음 매크로가 선행되어야 함(imgui.h보다 먼저 선행되어야 함)
+
+// 2480 라인 부근 : https://github.com/ocornut/imgui/blob/master/imgui.h
+#define IMGUI_DEFINE_MATH_OPERATORS // #include <imgui.h> 보다 선행되어야 함
+
+##################################################
+
+모든 Window는 DrawList라는 것을 가진다(GetWindowDrawList()).
+
+윈도우의 DrawList는 윈도우의 영역을 넘어서면 클리핑해서 그린다.
+
+윈도우의 DrawList가 먼저 그려진 다음 타이틀 바를 그린다(혼동 주의).
+
+윈도우의 DrawList가 아닌 ImGui 내 전역 DrawList 또한 존재한다(GetBackgroundDrawList(), GetForegroundDrawList()).
+
+참고로 모든 DrawList는 시스템 윈도우 좌표를 기준으로 그린다(ImGui 내 Window의 상대 좌표로 그리는 것이 아님).
+
+따라서 절대좌표를 잘 계산해서 그려야 한다.
+
+이때 활용할 수 있는 것이 GetWindowPos()
+
+##################################################
+
+IM_COL32(r, g, b, a) 매크로를 활용하면 손쉽게 색상을 지정할 수 있음(0 ~ 255의 크기를 받음).
+
+GetColorU32(ImVec4)를 쓰면 0.0f ~ 1.0f로 지정한 색상을 U32 컬러로 바꿀 수 있음.
+
+
+ImGui의 기본 색상이 내장되어 있으니 테스트 코드 작성 시 활용할 것.
+
+- IM_COL32_WHITE, IM_COL32_BLACK
+
+
+ImVec4로 색상을 받는 경우에는 0.0f ~ 1.0f로 색상을 지정해야 한다(0 ~ 255 아님).
+
+예를 들어, ColorEditXXX() 계열의 함수는 색상을 0.0f ~ 1.0f로 받아 가시적으로 보여줄 때는 0 ~ 255로 컨버팅해서 보여준다.
+
+##################################################
+
+윈도우가 포커싱될 때 다른 윈도우를 가리지 않게 하려면 다음 플래그가 필요함.
+
+- ImGuiWindowFlags_NoBringToFrontOnFocus

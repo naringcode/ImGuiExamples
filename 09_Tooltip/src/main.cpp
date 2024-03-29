@@ -151,7 +151,7 @@ int main(int argc, char* argv[])
             ImGui::PushStyleColor(ImGuiCol_Button, ImVec4{ 0.8f, 0.2f, 0.2f, 1.0f });
             {
                 ImGui::Button("I am Button");
-
+                
                 // BeginTooltip() / EndTooltip() ¹æ½Ä
                 if (ImGui::IsItemHovered())
                 {
