@@ -8,6 +8,7 @@
       - ImGuiStyleVar_ItemSpacing
 
 - Primitives
+  - Canvas
 
 - Custom Style
   - GetStyle() -> style.Colors[ImGuiCol_XXX] = ImVec4(...)
