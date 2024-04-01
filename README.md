@@ -13,6 +13,7 @@
 - vcpkg install sdl2-ttf
 - vcpkg install sdl2-gfx
 - vcpkg install imgui[win32-binding,sdl2-binding,sdl2-renderer-binding]:x64-windows
+- vcpkg install implot
 
 # 참고사항
 - 컴파일되어 변환되는 중간 단계의 파일은 솔루션이 위치한 bin-int 폴더에 위치
