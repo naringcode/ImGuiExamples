@@ -9,7 +9,7 @@
 #include <imgui_impl_sdlrenderer2.h>
 #include <imgui_stdlib.h> // std::string을 TextInput()에 적용하기 위함
 
-// https://github.com/franneck94/UdemyCppGui/tree/master/2_ImGui/1_HelloWorld/src
+// https://github.com/franneck94/UdemyCppGui/tree/master/2_ImGui/Plotter
 
 void WidgetWindow::Draw(const std::string& windowName, int systemWindowWidth, int systemWindowHeight)
 {
@@ -80,7 +80,7 @@ void WidgetWindow::drawPlot()
 
     for (const auto& function : _selectedFunctions)
     {
-        float x = kMinX;
+        double x = kMinX;
 
         for (std::size_t i = 0; i < kNumPoints; i++)
         {
