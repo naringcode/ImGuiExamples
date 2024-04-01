@@ -6,10 +6,9 @@
 #include <imgui_impl_sdlrenderer2.h>
 #include <imgui_stdlib.h> // std::string을 TextInput()에 적용하기 위함
 
-
 #include <Windows.h>
 
-// https://github.com/franneck94/UdemyCppGui/tree/master/2_ImGui/FileExplorer/src
+// https://github.com/franneck94/UdemyCppGui/tree/master/2_ImGui/Plotter/src
 
 void WidgetWindow::Draw(const std::string& windowName, int systemWindowWidth, int systemWindowHeight)
 {
