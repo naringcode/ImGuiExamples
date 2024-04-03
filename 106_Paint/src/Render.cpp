@@ -210,12 +210,19 @@ void WidgetWindow::drawColorButtons()
         ImGui::OpenPopup("Color Picker");
     }
     
-    // BeginPopupModal()은 새로운 창을 만드는 느낌이 강하다.
+    // BeginPopupModal()은 새로운 창을 만드는 느낌이 강하다(Popup의 외부 영역을 클릭해도 안 닫힘).
+    // BeginPopup()은 Window 내 Child Window를 만드는 느낌이 강하다(Popup의 외부 영역을 클릭하면 닫힘).
     if (ImGui::BeginPopup("Color Picker"))
     {
         // ColorEdit과 ColorPicker의 차이는 직접 주석처리해서 실행하는 방식으로 확인할 것
         ImGui::ColorPicker3("##picker", reinterpret_cast<float*>(&_currentDrawColor));
     
+        // 해당 버튼을 클릭해도 닫히고 Popup의 외부 영역을 클릭해도 닫힌다.
+        if (ImGui::Button("Close Test"))
+        {
+            ImGui::CloseCurrentPopup();
+        }
+
         ImGui::EndPopup();
     }
 

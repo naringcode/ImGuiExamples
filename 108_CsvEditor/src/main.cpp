@@ -107,12 +107,12 @@ void PollEvents()
         }
         else if (SDL_KEYDOWN == event.type)
         {
-            if (SDLK_ESCAPE == event.key.keysym.sym)
-            {
-                g_IsRunning = false;
-
-                break;
-            }
+            // if (SDLK_ESCAPE == event.key.keysym.sym)
+            // {
+            //     g_IsRunning = false;
+            // 
+            //     break;
+            // }
         }
     }
 }
