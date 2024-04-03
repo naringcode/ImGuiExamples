@@ -14,8 +14,8 @@ public:
     using PointData = std::tuple<ImVec2, ImColor, float>;
 
     static constexpr auto kBufferSize = std::size_t{ 1024 }; // 1024 characters
-    static constexpr auto kPopupFlags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar;
 
+    static constexpr auto kPopupFlags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar;
     static constexpr auto kPopupSize = ImVec2{ 300.0f, 100.0f };
     static constexpr auto kPopupButtonSize = ImVec2{ 120.0f, 0.0f }; // 0을 지정하면 Automatically하게 사이즈 조절
 

@@ -115,6 +115,7 @@ void WidgetWindow::drawCanvas()
     const auto kBorderMax = ImVec2{ _canvasPos.x + kButtonSize.x - kBorderThickness,
                                     _canvasPos.y + kButtonSize.y - kBorderThickness };
 
+    // ImDrawCornerFlags_AllÀº DeprecatedµÊ.
     drawList->AddRect(kBorderMin, kBorderMax, IM_COL32(255, 255, 255, 255), 0.0f, ImDrawFlags_RoundCornersAll, kBorderThickness);
 }
 
