@@ -12,7 +12,8 @@ void WidgetWindow::Draw(const std::string& windowName, int systemWindowWidth, in
 {
     constexpr static auto kWindowFlags =
         ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
-        ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar;
+        ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar |
+        ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoInputs;
 
     ImGui::SetNextWindowPos(ImVec2{ 10.0f, 10.0f });
     ImGui::SetNextWindowSize(ImVec2{ (float)systemWindowWidth - 20.0f, (float)systemWindowHeight - 20.0f - 40.0f }); // 40.0f : height of taskbar
@@ -65,7 +66,7 @@ void WidgetWindow::drawTaskbar(int systemWindowWidth, int systemWindowHeight)
 
     if (openTaskbar)
     {
-        showIconList();
+        showIconList(&openTaskbar);
     }
 
     ImGui::SameLine();
@@ -76,7 +77,7 @@ void WidgetWindow::drawTaskbar(int systemWindowWidth, int systemWindowHeight)
     _clock.GetTime();
 
     static auto clockOpen = false;
-    const  auto time = std::format("{}:{}:{}", _clock._hrs, _clock._mins, _clock._hrs);
+    const  auto time = std::format("{:02}:{:02}:{:02}", _clock._hrs, _clock._mins, _clock._hrs);
 
     if (ImGui::Button(time.data(), ImVec2{ 100.0f, 30.0f }) || clockOpen)
     {
@@ -102,7 +103,7 @@ void WidgetWindow::showIconList(bool* open)
     // ImGuiCond_Once // 매 런타임 시 지정한 속성을 한 번만 반영
     // ImGuiCond_Always // 지정한 속성을 항상 반영(ImGuiCond_None과 같음)
     // ImGuiCond_FirstUseEver // ini 파일에 저장된 내역이 없으면 지정한 속성을 기록(이미 있는 데이터면 해당 값을 사용)
-    ImGui::SetNextWindowSize(ImVec2{ 100.0f, kPopupHeight }, ImGuiCond_Always);
+    ImGui::SetNextWindowSize(ImVec2{ 120.0f, kPopupHeight }, ImGuiCond_Always);
     // ImGui::SetNextWindowPos(ImVec2{ 0.0f, 680.0f - kPopupHeight }, ImGuiCond_Always);
     ImGui::SetNextWindowPos(ImVec2{ ImGui::GetWindowPos().x, ImGui::GetWindowPos().y + ImGui::GetWindowSize().y - kPopupHeight - 40.0f}, ImGuiCond_Always);
 
