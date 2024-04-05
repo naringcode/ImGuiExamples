@@ -80,6 +80,14 @@ ImVec4로 색상을 받는 경우에는 0.0f ~ 1.0f로 색상을 지정해야 한다(0 ~ 255 아님).
 
 https://github.com/ocornut/imgui/issues/3596#issuecomment-726575960
 
-BeginGroup()은 X 값을 Locking하고 바운딩 박스를 캡처한다.
+BeginGroup()은 위치인 X 값을 Locking하고 바운딩 박스를 캡처한다.
 
 BeginChild()는 크기를 필요로 한다(크기를 제공하지 않으면 여분의 전체 공간을 사용한다).
+
+##################################################
+
+OpenPopup()은 레이블을 지정하여 팝업을 사용할 것이라고 통보하는 것이지 창을 여는 함수가 아니다.
+
+창을 여는 것은 BeginPopupModal()을 통해서 진행하며 성공적으로 열었을 때는 EndPopup()과 매칭되어야 한다.
+
+Popup을 닫는 것은 CloseCurrentPopup()으로 한다.
