@@ -3,9 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.7.34221.43
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "01_Demo", "01_Demo\01_Demo.vcxproj", "{AADF4949-BD33-4F42-9794-E94BFB23068B}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "001_Demo", "001_Demo\001_Demo.vcxproj", "{AADF4949-BD33-4F42-9794-E94BFB23068B}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "00_Basic", "00_Basic", "{9AFF9EBD-24FD-45C6-9D68-D68A9938230D}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "000_Basic", "000_Basic", "{9AFF9EBD-24FD-45C6-9D68-D68A9938230D}"
 	ProjectSection(SolutionItems) = preProject
 		Memo.txt = Memo.txt
 		Todo.txt = Todo.txt
@@ -13,31 +13,31 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "00_Basic", "00_Basic", "{9A
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "100_Widget", "100_Widget", "{852B2F4B-6F1D-4ED3-8371-92D87F58C1E3}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "02_MultiWindows", "02_MultiWindows\02_MultiWindows.vcxproj", "{5FE1D9D7-B2EC-4256-9D2D-3D3B1A1D1EAD}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "002_MultiWindows", "002_MultiWindows\002_MultiWindows.vcxproj", "{5FE1D9D7-B2EC-4256-9D2D-3D3B1A1D1EAD}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "03_WindowFlags", "03_WindowFlags\03_WindowFlags.vcxproj", "{E242651A-954B-4173-8E56-1403DD8C0A13}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "003_WindowFlags", "003_WindowFlags\003_WindowFlags.vcxproj", "{E242651A-954B-4173-8E56-1403DD8C0A13}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "04_IDs", "04_IDs\04_IDs.vcxproj", "{AA132455-2E94-49DA-A3EB-6B72CEB1DBDA}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "004_IDs", "004_IDs\004_IDs.vcxproj", "{AA132455-2E94-49DA-A3EB-6B72CEB1DBDA}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "05_InputText", "05_InputText\05_InputText.vcxproj", "{3664ADF1-90BF-4222-BC03-2CC5953D3CAC}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "005_InputText", "005_InputText\005_InputText.vcxproj", "{3664ADF1-90BF-4222-BC03-2CC5953D3CAC}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "06_Group", "06_Group\06_Group.vcxproj", "{5F19F568-FEAA-487B-998E-5F976BF74B9D}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "006_Group", "006_Group\006_Group.vcxproj", "{5F19F568-FEAA-487B-998E-5F976BF74B9D}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "200_Advanced", "200_Advanced", "{91FC8128-4079-4F66-813C-34B15E172722}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "07_Menu", "07_Menu\07_Menu.vcxproj", "{7657AAB6-A472-47B2-A879-027ED59AA077}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "007_Menu", "007_Menu\007_Menu.vcxproj", "{7657AAB6-A472-47B2-A879-027ED59AA077}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "0_Playground", "0_Playground\0_Playground.vcxproj", "{8DA37BB6-3A1E-4596-9D1D-919B2499B7E9}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "08_ItemSpacing", "08_ItemSpacing\08_ItemSpacing.vcxproj", "{6E8FDDF7-8FC8-4A51-BDC4-44B28DFFF05F}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "008_ItemSpacing", "008_ItemSpacing\008_ItemSpacing.vcxproj", "{6E8FDDF7-8FC8-4A51-BDC4-44B28DFFF05F}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "09_Tooltip", "09_Tooltip\09_Tooltip.vcxproj", "{050D257E-8664-4258-8808-AE65B750C96E}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "009_Tooltip", "009_Tooltip\009_Tooltip.vcxproj", "{050D257E-8664-4258-8808-AE65B750C96E}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "10_DrawPrimitives", "10_DrawPrimitives\10_DrawPrimitives.vcxproj", "{AB5B337C-A0F6-4647-A65C-3386E93D0D7D}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "010_DrawPrimitives", "010_DrawPrimitives\010_DrawPrimitives.vcxproj", "{AB5B337C-A0F6-4647-A65C-3386E93D0D7D}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "11_CustomControl_Link", "11_CustomControl_Link\11_CustomControl_Link.vcxproj", "{DFBC762F-52A4-4E3D-85CD-57C58EB91DB2}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "011_CustomControl_Link", "011_CustomControl_Link\011_CustomControl_Link.vcxproj", "{DFBC762F-52A4-4E3D-85CD-57C58EB91DB2}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "12_Fonts", "12_Fonts\12_Fonts.vcxproj", "{1201DD9C-59F5-4A87-B7BD-C00DC1433910}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "012_Fonts", "012_Fonts\012_Fonts.vcxproj", "{1201DD9C-59F5-4A87-B7BD-C00DC1433910}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "101_WidgetFormat", "101_WidgetFormat\101_WidgetFormat.vcxproj", "{B1308CF2-7029-4393-A9DE-AC49A792025A}"
 EndProject
