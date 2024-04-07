@@ -42,7 +42,7 @@ public:
 
 private:
     void drawDesktop();
-    void drawTaskbar(int systemWindowWidth, int systemWindowHeight);
+    void drawTaskbar();
 
     void showIconList(bool* open = nullptr);
 

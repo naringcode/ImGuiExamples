@@ -1,4 +1,4 @@
-#include "Render.h"
+#include "FileExplorer.h"
 
 #include <imgui.h>
 #include <implot.h>
@@ -8,18 +8,14 @@
 
 #include <Windows.h>
 
-// https://github.com/franneck94/UdemyCppGui/tree/master/2_ImGui/FileExplorer/src
+// https://github.com/franneck94/UdemyCppGui/tree/master/2_ImGui/Plotter/src
 
-void WidgetWindow::Draw(const std::string& windowName, int systemWindowWidth, int systemWindowHeight)
+void FileExplorerWindow::Draw(const std::string& windowName, bool* open)
 {
-    constexpr static auto kWindowFlags =
-        ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
-        ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar;
+    ImGui::SetNextWindowPos(this->GetNextPos());
+    ImGui::SetNextWindowSize(this->GetNextSize());
 
-    ImGui::SetNextWindowPos(ImVec2{ 10.0f, 10.0f });
-    ImGui::SetNextWindowSize(ImVec2{ (float)systemWindowWidth - 20.0f, (float)systemWindowHeight - 20.0f });
-
-    ImGui::Begin(windowName.c_str(), nullptr, kWindowFlags);
+    ImGui::Begin(windowName.c_str(), open, kMainWindowFlags);
 
     drawMenu();
 
@@ -41,7 +37,7 @@ void WidgetWindow::Draw(const std::string& windowName, int systemWindowWidth, in
     ImGui::End();
 }
 
-void WidgetWindow::drawMenu()
+void FileExplorerWindow::drawMenu()
 {
     if (ImGui::Button("Go Up"))
     {
@@ -58,7 +54,7 @@ void WidgetWindow::drawMenu()
     ImGui::Text("Current Directory: %s", _currentPath.string().c_str());
 }
 
-void WidgetWindow::drawContents()
+void FileExplorerWindow::drawContents()
 {
     /**
      * std::filesystem은 시스템의 네이티브 인코딩 방식에 따라 파일 경로를 처리함.
@@ -156,7 +152,7 @@ void WidgetWindow::drawContents()
     }
 }
 
-void WidgetWindow::drawActions()
+void FileExplorerWindow::drawActions()
 {
     if (fs::is_directory(_selectedEntry))
     {
@@ -211,7 +207,7 @@ void WidgetWindow::drawActions()
     deleteFilePopup();
 }
 
-void WidgetWindow::drawFilter()
+void FileExplorerWindow::drawFilter()
 {
     ImGui::Text("Filter by extension");
 
@@ -240,7 +236,7 @@ void WidgetWindow::drawFilter()
     ImGui::Text("Number of files: %u", filteredFileCnt);
 }
 
-void WidgetWindow::openFileWithDefaultEditor()
+void FileExplorerWindow::openFileWithDefaultEditor()
 {
     // 운영체제마다 기본 에디터로 여는 방식이 다르다.
 #ifdef _WIN32
@@ -255,7 +251,7 @@ void WidgetWindow::openFileWithDefaultEditor()
     std::system(command.c_str());
 }
 
-void WidgetWindow::renameFilePopup()
+void FileExplorerWindow::renameFilePopup()
 {
     // OpenPopup()에 적용했던 것과 동일한 이름 지정
     if (ImGui::BeginPopupModal("Rename File", &_isRenameDialogOpened))
@@ -290,7 +286,7 @@ void WidgetWindow::renameFilePopup()
     }
 }
 
-void WidgetWindow::deleteFilePopup()
+void FileExplorerWindow::deleteFilePopup()
 {
     // OpenPopup()에 적용했던 것과 동일한 이름 지정
     if (ImGui::BeginPopupModal("Delete File", &_isDeleteDialogOpened))
@@ -319,7 +315,7 @@ void WidgetWindow::deleteFilePopup()
     }
 }
 
-bool WidgetWindow::renameFile(const fs::path& oldPath, const fs::path& newPath)
+bool FileExplorerWindow::renameFile(const fs::path& oldPath, const fs::path& newPath)
 {
     try
     {
@@ -335,7 +331,7 @@ bool WidgetWindow::renameFile(const fs::path& oldPath, const fs::path& newPath)
     }
 }
 
-bool WidgetWindow::deleteFile(const fs::path& path)
+bool FileExplorerWindow::deleteFile(const fs::path& path)
 {
     try
     {
@@ -349,9 +345,4 @@ bool WidgetWindow::deleteFile(const fs::path& path)
 
         return false;
     }
-}
-
-void Render(WidgetWindow& window, int systemWindowWidth, int systemWindowHeight)
-{
-    window.Draw("Window Name", systemWindowWidth, systemWindowHeight);
 }

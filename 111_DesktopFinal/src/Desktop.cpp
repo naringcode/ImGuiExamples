@@ -1,4 +1,4 @@
-#include "Render.h"
+#include "Desktop.h"
 
 #include <imgui.h>
 #include <implot.h>
@@ -6,40 +6,50 @@
 #include <imgui_impl_sdlrenderer2.h>
 #include <imgui_stdlib.h> // std::string을 TextInput()에 적용하기 위함
 
-// https://github.com/franneck94/UdemyCppGui/tree/master/2_ImGui/Desktop/src
+// https://github.com/franneck94/UdemyCppGui/tree/master/2_ImGui/Final/src
 
-void WidgetWindow::Draw(const std::string& windowName, int systemWindowWidth, int systemWindowHeight)
+void Desktop::Draw(const std::string& windowName, bool* open)
 {
-    constexpr static auto kWindowFlags =
-        ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
-        ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar |
-        ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoInputs;
+    ImGui::SetNextWindowPos(this->GetNextPos());
+    ImGui::SetNextWindowSize(this->GetNextSize());
 
-    ImGui::SetNextWindowPos(ImVec2{ 10.0f, 10.0f });
-    ImGui::SetNextWindowSize(ImVec2{ (float)systemWindowWidth - 20.0f, (float)systemWindowHeight - 20.0f - 40.0f }); // 40.0f : height of taskbar
+    ImGui::Begin(windowName.c_str(), nullptr, kMainWindowFlags | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_MenuBar);
+    
+    this->SettingsMenuBar();
 
-    ImGui::Begin(windowName.c_str(), nullptr, kWindowFlags);
-
+    drawBackground();
     drawDesktop();
-    drawTaskbar(systemWindowWidth, systemWindowHeight);
+    drawTaskbar();
 
     ImGui::End();
 }
 
-void Render(WidgetWindow& window, int systemWindowWidth, int systemWindowHeight)
+void Desktop::drawBackground()
 {
-    window.Draw("Window Name", systemWindowWidth, systemWindowHeight);
+    if (nullptr == _bgImageChunk)
+        return;
+
+    // ImGui::Begin("Img Test");
+
+    ImGui::SetCursorPos(ImVec2{ ImGui::GetWindowSize().x / 2 - _bgImageChunk->width / 2,
+                                ImGui::GetWindowSize().y / 2 - _bgImageChunk->height / 2 });
+
+    DisplayImage(*_bgImageChunk);
+
+    ImGui::SetCursorPos(ImVec2{ 0.0f, 0.0f });
+
+    // ImGui::End();
 }
 
-void WidgetWindow::drawDesktop()
+void Desktop::drawDesktop()
 {
     for (auto& icon : _icons)
     {
-        icon.Draw();
+        icon.Draw(*this);
     }
 }
 
-void WidgetWindow::drawTaskbar(int systemWindowWidth, int systemWindowHeight)
+void Desktop::drawTaskbar()
 {
     static constexpr auto kTaskbarFlags =
         ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
@@ -48,7 +58,7 @@ void WidgetWindow::drawTaskbar(int systemWindowWidth, int systemWindowHeight)
 
     auto taskbarSize = ImVec2{ ImGui::GetWindowSize().x, 40.0f };
     // auto taskbarPos = ImVec2{ ImGui::GetWindowPos().x, ImGui::GetWindowPos().y + ImGui::GetWindowSize().y - taskbarSize.y };
-    auto taskbarPos  = ImVec2{ ImGui::GetWindowPos().x, ImGui::GetWindowPos().y + ImGui::GetWindowSize().y }; // taskbarSize.y의 크기를 사전에 미리 빼둠.
+    auto taskbarPos  = ImVec2{ ImGui::GetWindowPos().x, ImGui::GetWindowPos().y + ImGui::GetWindowSize().y - 40.0f }; // taskbarSize.y의 크기를 사전에 미리 빼둠.
 
     ImGui::SetNextWindowSize(taskbarSize);
     ImGui::SetNextWindowPos(taskbarPos);
@@ -57,7 +67,7 @@ void WidgetWindow::drawTaskbar(int systemWindowWidth, int systemWindowHeight)
 
     ImGui::Begin("Taskbar", nullptr, kTaskbarFlags);
 
-    if (ImGui::Button("All Icons"))
+    if (ImGui::Button("All Icons", ImVec2{ 100.0F, 30.0F }))
     {
         ImGui::OpenPopup("My Programs");
 
@@ -71,8 +81,19 @@ void WidgetWindow::drawTaskbar(int systemWindowWidth, int systemWindowHeight)
 
     ImGui::SameLine();
 
+    static auto themeOpen = false;
+
+    if (ImGui::Button("Theme", ImVec2{ 100.0F, 30.0F }) || themeOpen)
+    {
+        themeOpen = true;
+
+        drawColorsSettings(&themeOpen);
+    }
+
+    ImGui::SameLine();
+
     // 위치를 오른쪽으로
-    ImGui::SetCursorPosX(ImGui::GetContentRegionAvail().x);
+    ImGui::SetCursorPosX(ImGui::GetContentRegionMax().x - 100.0f);
 
     _clock.GetTime();
 
@@ -81,7 +102,9 @@ void WidgetWindow::drawTaskbar(int systemWindowWidth, int systemWindowHeight)
 
     if (ImGui::Button(time.data(), ImVec2{ 100.0f, 30.0f }) || clockOpen)
     {
-        _clock.Draw("ClockWindow", systemWindowWidth, systemWindowHeight);
+        _clock.UpdateSystemWindowSize(this->GetSystemWindowSize());
+
+        _clock.Draw("ClockWindow");
 
         clockOpen = true;
     }
@@ -95,10 +118,10 @@ void WidgetWindow::drawTaskbar(int systemWindowWidth, int systemWindowHeight)
     ImGui::End();
 }
 
-void WidgetWindow::showIconList(bool* open)
+void Desktop::showIconList(bool* open)
 {
     const auto kSelectableHeight = ImGui::GetTextLineHeightWithSpacing();
-    const auto kPopupHeight      = kSelectableHeight * kNumIcons + 40.0f;
+    const auto kPopupHeight      = kSelectableHeight * _icons.size() + 40.0f;
 
     // ImGuiCond_Once // 매 런타임 시 지정한 속성을 한 번만 반영
     // ImGuiCond_Always // 지정한 속성을 항상 반영(ImGuiCond_None과 같음)
@@ -115,6 +138,10 @@ void WidgetWindow::showIconList(bool* open)
             {
                 icon.popupOpen = true;
 
+                icon.base->UpdateSystemWindowSize(GetSystemWindowSize());
+
+                // icon.base->Draw(icon.label, &icon.popupOpen);
+
                 ImGui::CloseCurrentPopup();
             }
         }
@@ -123,46 +150,32 @@ void WidgetWindow::showIconList(bool* open)
     }
 }
 
-void WidgetWindow::Icon::Draw()
+void Desktop::Icon::Draw(WindowBase& parent)
 {
     static constexpr auto kButtonSize = ImVec2{ 100.0f, 50.0f };
 
-    const auto labelWindow = std::format("IconWindow##{}", this->label);
-    const auto labelPopup  = std::format("IconPopup##{}", this->label);
+    const auto labelWindow = std::format("{}##IconWindow", this->label);
+    const auto labelPopup  = std::format("{}##IconPopup", this->label);
 
     // ImGui::SetNextWindowSize();
     // ImGui::SetNextWindowPos();
 
     ImGui::Begin(labelWindow.data(), nullptr, ImGuiWindowFlags_AlwaysAutoResize);
 
-    if (ImGui::Button(this->label.data(), kButtonSize))
+    if (ImGui::Button(this->label.data(), kButtonSize) || popupOpen)
     {
-        clickCount++;
-    }
+        popupOpen = true;
 
-    // Popup을 여는 코드
-    if (clickCount > 0 || popupOpen)
-    {
-        ImGui::OpenPopup(labelPopup.data());
-
-        clickCount = 0;
-        popupOpen  = true;
-    }
-
-    if (ImGui::BeginPopupModal(labelPopup.data(), &popupOpen))
-    {
-        // ImGui::Text("Hi");
-        ImGui::Text("%s", this->label.c_str());
-
-        if (ImGui::Button("Close"))
-        {
-            popupOpen = false;
-
-            ImGui::CloseCurrentPopup();
-        }
-
-        ImGui::EndPopup();
+        base->UpdateSystemWindowSize(parent.GetSystemWindowSize());
+        base->Draw(label, &popupOpen);
     }
 
     ImGui::End();
+}
+
+void Render(Desktop& window, int systemWindowWidth, int systemWindowHeight)
+{
+    window.UpdateSystemWindowSize(ImVec2{ (float)systemWindowWidth, (float)systemWindowHeight });
+
+    window.Draw("Window Name");
 }
