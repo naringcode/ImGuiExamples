@@ -25,7 +25,11 @@ void WidgetWindow::Draw(const std::string& windowName, int systemWindowWidth, in
 
     ImGui::Separator();
 
-    drawContents();
+    ImGui::BeginChild("Contents##Child", ImVec2{ 0.0f , ImGui::GetContentRegionAvail().y - 100.0f }, ImGuiChildFlags_None, ImGuiWindowFlags_AlwaysVerticalScrollbar);
+    {
+        drawContents();
+    }
+    ImGui::EndChild();
 
     // 다음에 그릴 위치를 조정
     ImGui::SetCursorPosY(ImGui::GetWindowHeight() - 100.0f);
