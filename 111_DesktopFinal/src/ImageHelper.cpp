@@ -9,7 +9,14 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
-// 전처리기에 _CRT_SECURE_NO_WARNINGS 추가
+/**
+ * 전처리기에 _CRT_SECURE_NO_WARNINGS 추가
+ * 혹은 stb 라이브러리를 직접 수정하여 "#ifdef __STDC_LIB_EXT1__" 구문을 수정 
+ *   -> #if defined(__STDC_LIB_EXT1__) || defined(_MSC_VER) && _MSC_VER >= 1400
+ *   -> #if defined(_WIN32)
+ * 
+ * GitHub을 보면 PR 요청이 무수히 많은데 왜 반영을 안 하는지 모르겠음.
+ */
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include <stb_image_write.h>
 
