@@ -61,6 +61,15 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "110_Desktop", "110_Desktop\
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "111_DesktopFinal", "111_DesktopFinal\111_DesktopFinal.vcxproj", "{B6C4D5DA-20C7-495B-9932-50F3AE3BBAA5}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ReadMe", "ReadMe", "{4917AB81-A18B-4DDC-9527-D3AC506CE85C}"
+	ProjectSection(SolutionItems) = preProject
+		Categories.txt = Categories.txt
+		Memo.txt = Memo.txt
+		Todo.txt = Todo.txt
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "201_IDETextEditor", "201_IDETextEditor\201_IDETextEditor.vcxproj", "{A31EBBC0-6C8E-44BF-84A6-4660606A95AF}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -261,6 +270,14 @@ Global
 		{B6C4D5DA-20C7-495B-9932-50F3AE3BBAA5}.Release|x64.Build.0 = Release|x64
 		{B6C4D5DA-20C7-495B-9932-50F3AE3BBAA5}.Release|x86.ActiveCfg = Release|Win32
 		{B6C4D5DA-20C7-495B-9932-50F3AE3BBAA5}.Release|x86.Build.0 = Release|Win32
+		{A31EBBC0-6C8E-44BF-84A6-4660606A95AF}.Debug|x64.ActiveCfg = Debug|x64
+		{A31EBBC0-6C8E-44BF-84A6-4660606A95AF}.Debug|x64.Build.0 = Debug|x64
+		{A31EBBC0-6C8E-44BF-84A6-4660606A95AF}.Debug|x86.ActiveCfg = Debug|Win32
+		{A31EBBC0-6C8E-44BF-84A6-4660606A95AF}.Debug|x86.Build.0 = Debug|Win32
+		{A31EBBC0-6C8E-44BF-84A6-4660606A95AF}.Release|x64.ActiveCfg = Release|x64
+		{A31EBBC0-6C8E-44BF-84A6-4660606A95AF}.Release|x64.Build.0 = Release|x64
+		{A31EBBC0-6C8E-44BF-84A6-4660606A95AF}.Release|x86.ActiveCfg = Release|Win32
+		{A31EBBC0-6C8E-44BF-84A6-4660606A95AF}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -289,6 +306,7 @@ Global
 		{12EE8FE0-315E-4A79-9CA3-D3223FC72F04} = {852B2F4B-6F1D-4ED3-8371-92D87F58C1E3}
 		{CE433E48-C440-4C96-A6C1-4C92125F9A74} = {852B2F4B-6F1D-4ED3-8371-92D87F58C1E3}
 		{B6C4D5DA-20C7-495B-9932-50F3AE3BBAA5} = {852B2F4B-6F1D-4ED3-8371-92D87F58C1E3}
+		{A31EBBC0-6C8E-44BF-84A6-4660606A95AF} = {91FC8128-4079-4F66-813C-34B15E172722}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {78EF6241-2D8C-4C77-A314-0DE799FCD118}
