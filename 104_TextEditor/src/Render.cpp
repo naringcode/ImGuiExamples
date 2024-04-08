@@ -1,12 +1,16 @@
 #include "Render.h"
 
 #include <fstream>
+#include <format>
 
 #include <imgui.h>
 #include <implot.h>
 #include <imgui_impl_sdl2.h>
 #include <imgui_impl_sdlrenderer2.h>
 #include <imgui_stdlib.h> // std::string을 TextInput()에 적용하기 위함
+
+// InputTextMultiline() -> InputTextEx() -> GetID() -> GetInputTextState() : imgui_internal.h에 있는 내용을 직접 쓰기 위함
+#include <imgui_internal.h>
 
 // https://github.com/franneck94/UdemyCppGui/tree/master/2_ImGui/TextEditor/src
 
@@ -140,21 +144,64 @@ void WidgetWindow::drawContents()
     static constexpr auto kLineNumberSize = ImVec2{ 30.0f, kInputTextSize.y };
     static constexpr auto kInputTextFlags = ImGuiInputTextFlags_AllowTabInput | ImGuiInputTextFlags_NoHorizontalScroll;
 
+    static float scrollY = 0.0f;
+
+    // ImGuiID inputFieldID = ImGui::GetCurrentWindow()->GetID("##InputField");
+    // ImGuiInputTextState* inputTextState = ImGui::GetInputTextState(inputFieldID);
+
     // Window 내 Child Window를 만드는 개념
-    ImGui::BeginChild("LineNumbers", kLineNumberSize);
+    ImGui::BeginChild("LineNumbers", kLineNumberSize, ImGuiChildFlags_None, ImGuiWindowFlags_NoScrollbar);
     {
+        // 기본 텍스트 크기 : 13
+        // auto t = ImGui::CalcTextSize("Hello");
+
+        // Dummy()를 쓰면 원하는 크기만큼 스페이싱 가능(ItemSpacing 스타일에는 영향을 받음)
+        // ImGui::Dummy(ImVec2{ 0.0f, 0.0f });
+
+        // Ctrl + A로 텍스트를 삭제하면 하나만 카운팅되는 버그가 있음.
         const auto kLineCount = std::count(_textBuffer, _textBuffer + kBufferSize, '\n') + 1;
 
-        for (auto i = 1; i <= kLineCount; i++)
+        ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2{ 8.0f, ImGui::GetStyle().FramePadding.y });
         {
-            ImGui::Text("%d", i);
+            ImGui::Spacing();
         }
+        ImGui::PopStyleVar();
+
+        ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2{ 8.0f, 0.0f });
+        {
+            for (auto i = 1; i <= kLineCount; i++)
+            {
+                ImGui::Text("%d", i);
+            }
+        }
+        ImGui::PopStyleVar();
+
+        // 스크롤링을 위한 비어있는 영역 생성(Spacing()은 안 되는 듯?)
+        ImGui::Dummy(ImVec2{ 1.0f, 10.0f });
+
+        // ImGui::SetScrollY(inputTextState->ScrollX);
+
+        // 이전에 지정한 스크롤 위치로 이동(1프레임 늦음)
+        ImGui::SetScrollY(scrollY);
     }
     ImGui::EndChild();
 
     ImGui::SameLine();
 
     ImGui::InputTextMultiline("##InputField", _textBuffer, kBufferSize, kInputTextSize, kInputTextFlags);
+
+    // auto temp = ImGui::FindWindowByName(std::format("{}/{}", "##InputField", ));
+
+    // ImGuiWindow* window = ImGui::GetCurrentWindow();
+    // scrollY = window->Scroll.y;
+
+    // https://github.com/ocornut/imgui/issues/1224#issuecomment-1306595172
+    // g.CurrentWindow <- 이 코드를 사용하는 것이 핵심임(InputTextMultiline(), BeginChild() 둘 다 사용함).
+    ImGui::BeginChild("##InputField");
+    {
+        scrollY = ImGui::GetScrollY();
+    }
+    ImGui::EndChild();
 }
 
 void WidgetWindow::drawInfo()
