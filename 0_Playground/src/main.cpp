@@ -203,12 +203,12 @@ int main(int, char**)
 	editor.SetErrorMarkers(markers);
 
 	// "breakpoint" markers
-	// TextEditor::Breakpoints bpts;
-	// bpts.insert(24);
-	// bpts.insert(47);
-	// editor.SetBreakpoints(bpts);
+	TextEditor::Breakpoints bpts;
+	bpts.insert(24);
+	bpts.insert(47);
+	editor.SetBreakpoints(bpts);
 
-	static const char* fileToEdit = "ImGuiColorTextEdit/TextEditor.cpp";
+	static const char* fileToEdit = "src/ImGuiColorTextEdit/TextEditor.cpp";
 	//	static const char* fileToEdit = "test.cpp";
 
 	{

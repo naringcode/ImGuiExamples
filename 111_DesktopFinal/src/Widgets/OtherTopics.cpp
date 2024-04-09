@@ -91,7 +91,7 @@ void OtherTopics::Draw(const std::string& windowName, bool* open)
     {
         ImGui::Separator();
 
-        ImGui::Text("Tab Size : %d", tabBar->Tabs.size());
+        ImGui::Text("Tab Size : %d", tabBar->Tabs.size());  
 
         ImGuiTabItem* tabItem = ImGui::TabBarFindTabByOrder(tabBar, 0);
         {
