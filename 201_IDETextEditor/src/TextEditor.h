@@ -8,13 +8,26 @@
  */
 #include <cstdint>
 
+#include <vector>
+#include <unordered_map>
+
 #include <string>
 #include <string_view>
+
+#include <functional>
 
 #include "imgui.h"
 
 class TextEditor
 {
+public:
+    struct CharInfo
+    {
+        char ch;
+    };
+
+    using TextLine = std::vector<CharInfo>;
+
 public:
     TextEditor() = default;
     ~TextEditor() = default;
@@ -43,7 +56,30 @@ public:
         ImGui::SetNextWindowPos(nextWindowPos, condition, pivot);
     }
 
+    void SetRenderMenuCallback(std::function<void(TextEditor&)> callback)
+    {
+        _renderMenuCallback = callback;
+    }
+
+    void SetRenderHeaderCallback(std::function<void(TextEditor&)> callback)
+    {
+        _renderHeaderCallback = callback;
+    }
+
+    void SetRenderFooterCallback(std::function<void(TextEditor&)> callback)
+    {
+        _renderFooterCallback = callback;
+    }
+
+    void SetText(const std::string_view& text);
+
 private:
     std::string _windowTitle = "Text Editor Window";
     uint32_t    _windowFlags = ImGuiWindowFlags_HorizontalScrollbar; // | ImGuiWindowFlags_MenuBar;
+
+    std::function<void(TextEditor&)> _renderMenuCallback = nullptr; // [](TextEditor&) {};
+    std::function<void(TextEditor&)> _renderHeaderCallback = nullptr; // [](TextEditor&) {};
+    std::function<void(TextEditor&)> _renderFooterCallback = nullptr; // [](TextEditor&) {};
+
+    std::vector<TextLine> _textLines;
 };

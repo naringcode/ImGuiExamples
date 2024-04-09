@@ -1,5 +1,6 @@
 // C++
 #include <iostream>
+#include <fstream>
 #include <vector>
 #include <string>
 
@@ -145,6 +146,31 @@ int main(int argc, char* argv[])
         return -1;
 
     TextEditor textEditor;
+    bool isTextEditorOpened = true;
+
+    textEditor.SetRenderMenuCallback([](TextEditor& textEditor) {
+        ImGui::Text("Menu");
+    });
+
+    textEditor.SetRenderHeaderCallback([](TextEditor& textEditor) {
+        ImGui::Text("Header");
+    });
+
+    textEditor.SetRenderFooterCallback([](TextEditor& textEditor) {
+        ImGui::Text("Footer");
+    });
+
+    // Set Text
+    {
+        std::ifstream in("src/TextEditor.cpp");
+
+        if (in && in.is_open())
+        {
+            std::string str{ std::istreambuf_iterator<char>(in), std::istreambuf_iterator<char>() };
+
+            textEditor.SetText(str);
+        }
+    }
     
     // Main Logic
     while (true == g_IsRunning)
@@ -153,8 +179,22 @@ int main(int argc, char* argv[])
 
         BeginFrame();
 
+        if (ImGui::BeginMainMenuBar())
+        {
+            if (false == isTextEditorOpened && ImGui::Button("Open Editor"))
+            {
+                isTextEditorOpened = true;
+            }
+            else if (isTextEditorOpened && ImGui::Button("Close Editor"))
+            {
+                isTextEditorOpened = false;
+            }
+
+            ImGui::EndMainMenuBar();
+        }
+
         textEditor.SetNextWindowSize(ImVec2{ 800.0f, 600.0f }, ImGuiCond_FirstUseEver);
-        textEditor.Render();
+        textEditor.Render(&isTextEditorOpened);
 
         EndFrame();
     }

@@ -1,0 +1,3 @@
+- Breakpoints 영역, Line Numbers 영역, Input 영역 구분
+- Input 기능 적용
+- Text Colorizing 적용
