@@ -153,7 +153,7 @@ int main(int argc, char* argv[])
     });
 
     textEditor.SetRenderHeaderCallback([](TextEditor& textEditor) {
-        ImGui::Text("Header");
+        ImGui::Text("Header | Lines : %d", textEditor.GetTotalLines());
     });
 
     textEditor.SetRenderFooterCallback([](TextEditor& textEditor) {
