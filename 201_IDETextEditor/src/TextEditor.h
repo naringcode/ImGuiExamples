@@ -10,6 +10,7 @@
 
 #include <vector>
 #include <unordered_map>
+#include <unordered_set>
 
 #include <string>
 #include <string_view>
@@ -174,6 +175,7 @@ private:
 
     std::vector<TextLine> _textLines;
 
-    static constexpr float _kEditorBorderThickness = 1.0f;
+    std::unordered_set<int32_t> _breakPoints;
+
     float _footerHeight = 0.0f; // to calculate the height of contents body
 };
