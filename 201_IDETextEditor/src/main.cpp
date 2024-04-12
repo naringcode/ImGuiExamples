@@ -148,16 +148,30 @@ int main(int argc, char* argv[])
     TextEditor textEditor;
     bool isTextEditorOpened = true;
 
-    textEditor.SetRenderMenuCallback([](TextEditor& textEditor) {
-        ImGui::Text("Menu");
-    });
+    textEditor.SetWindowFlags(ImGuiWindowFlags_MenuBar);
 
+    textEditor.SetRenderMenuCallback([](TextEditor& textEditor) {
+        if (ImGui::BeginMenuBar())
+        {
+            if (ImGui::BeginMenu("Menu"))
+            {
+                ImGui::MenuItem("First");
+                ImGui::MenuItem("Second");
+                ImGui::MenuItem("Third");
+    
+                ImGui::EndMenu();
+            }
+    
+            ImGui::EndMenuBar();
+        }
+    });
+    
     textEditor.SetRenderHeaderCallback([](TextEditor& textEditor) {
         ImGui::Text("Header | Lines : %d", textEditor.GetTotalLines());
     });
 
     textEditor.SetRenderFooterCallback([](TextEditor& textEditor) {
-        ImGui::Text("Footer");
+        ImGui::Text("Footer | Lang : C++");
     });
 
     // Set Text

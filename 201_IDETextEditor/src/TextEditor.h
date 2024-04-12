@@ -16,6 +16,7 @@
 
 #include <functional>
 
+#define IMGUI_DEFINE_MATH_OPERATORS
 #include "imgui.h"
 
 class TextEditor
@@ -41,13 +42,23 @@ public:
     };
 
 public:
-    TextEditor() = default;
+    TextEditor()
+    {
+        _textLines.push_back(TextLine{ }); // empty text
+    }
+
     ~TextEditor() = default;
 
 public:
     void Render(bool* open = nullptr);
 
-protected:
+private:
+    void renderMenu();
+    void renderHeader();
+    void renderEditor();
+    void renderFooter();
+
+private:
     void beginStyle()
     {
         _styleVarStackList.emplace_back();
@@ -162,4 +173,7 @@ private:
     std::vector<std::vector<StyleColorItem>> _styleColStackList;
 
     std::vector<TextLine> _textLines;
+
+    static constexpr float _kEditorBorderThickness = 1.0f;
+    float _footerHeight = 0.0f; // to calculate the height of contents body
 };

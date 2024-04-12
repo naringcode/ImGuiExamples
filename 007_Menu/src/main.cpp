@@ -64,6 +64,7 @@ int main(int argc, char* argv[])
     // Setup Platform/Renderer backends
     ImGui_ImplSDL2_InitForSDLRenderer(window, renderer);
     ImGui_ImplSDLRenderer2_Init(renderer);
+
     // Main Logic
     bool isRunning = true;
     while (true == isRunning)
