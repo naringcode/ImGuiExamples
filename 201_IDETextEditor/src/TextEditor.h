@@ -175,7 +175,7 @@ private:
 
     std::vector<TextLine> _textLines;
 
-    std::unordered_set<int32_t> _breakPoints;
+    std::unordered_set<int32_t> _breakPoints; // TODO : thread safe
 
     float _footerHeight = 0.0f; // to calculate the height of contents body
 };
