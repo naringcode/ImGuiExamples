@@ -54,6 +54,9 @@ public:
     void Render(bool* open = nullptr);
 
 private:
+    void handleKeyboardInputs();
+    void handleMouseInputs();
+
     void renderMenu();
     void renderHeader();
     void renderEditor();
@@ -127,7 +130,7 @@ public:
 
     void SetWindowFlags(ImGuiWindowFlags windowFlags /* = ImGuiWindowFlags_None*/)
     {
-        _windowFlags = windowFlags | ImGuiWindowFlags_HorizontalScrollbar; // | ImGuiWindowFlags_MenuBar;
+        _windowFlags = windowFlags; // | ImGuiWindowFlags_MenuBar;
     }
 
     void SetNextWindowSize(const ImVec2& nextWindowSize, ImGuiCond condition = ImGuiCond_None)
@@ -164,7 +167,7 @@ public:
 
 private:
     std::string _windowTitle = "Text Editor Window";
-    uint32_t    _windowFlags = ImGuiWindowFlags_HorizontalScrollbar; // | ImGuiWindowFlags_MenuBar;
+    uint32_t    _windowFlags = ImGuiWindowFlags_None; // | ImGuiWindowFlags_MenuBar;
 
     std::function<void(TextEditor&)> _renderMenuCallback = nullptr; // [](TextEditor&) {};
     std::function<void(TextEditor&)> _renderHeaderCallback = nullptr; // [](TextEditor&) {};
