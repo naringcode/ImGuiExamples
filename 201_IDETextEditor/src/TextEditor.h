@@ -42,6 +42,20 @@ public:
         ImVec4   col;
     };
 
+    struct LineCoordinate
+    {
+        int32_t lineNo;
+        int32_t column;
+    };
+
+    struct LineSelection
+    {
+        LineCoordinate start;
+        LineCoordinate end;
+
+        LineCoordinate cursor;
+    };
+
 public:
     TextEditor()
     {
@@ -76,6 +90,13 @@ private:
 
         _styleVarStackList.pop_back();
         _styleColStackList.pop_back();
+    }
+
+    void pushStyleVar(ImGuiStyleVar idx, float val)
+    {
+        ImGui::PushStyleVar(idx, val);
+
+        _styleVarStackList.back().push_back({ idx, ImVec2{ val, -1.0f } });
     }
 
     void pushStyleVar(ImGuiStyleVar idx, const ImVec2& val)
@@ -169,7 +190,7 @@ private:
     std::string _windowTitle = "Text Editor Window";
     uint32_t    _windowFlags = ImGuiWindowFlags_None; // | ImGuiWindowFlags_MenuBar;
 
-    std::function<void(TextEditor&)> _renderMenuCallback = nullptr; // [](TextEditor&) {};
+    std::function<void(TextEditor&)> _renderMenuCallback   = nullptr; // [](TextEditor&) {};
     std::function<void(TextEditor&)> _renderHeaderCallback = nullptr; // [](TextEditor&) {};
     std::function<void(TextEditor&)> _renderFooterCallback = nullptr; // [](TextEditor&) {};
 
@@ -180,5 +201,16 @@ private:
 
     std::unordered_set<int32_t> _breakPoints; // TODO : thread safe
 
-    float _footerHeight = 0.0f; // to calculate the height of contents body
+    float _footerSpacingY = 0.0f; // to calculate the height of contents body
+
+    /**
+     * Rendering Info
+     */
+    ImVec2 _editorStartPadding = ImVec2{ 0.0f, 4.0f };
+    float  _itemSpacingY = 3.0f;
+
+    float _lineNoSpacing   = 4.0f;
+    float _textLineSpacing = 8.0f;
+
+    float _lineHeight = 1.0f;
 };
