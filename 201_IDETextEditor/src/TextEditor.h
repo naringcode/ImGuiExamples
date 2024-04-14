@@ -206,11 +206,14 @@ private:
     /**
      * Rendering Info
      */
-    ImVec2 _editorStartPadding = ImVec2{ 0.0f, 4.0f };
-    float  _itemSpacingY = 3.0f;
+    ImVec2 _editorPadding = ImVec2{ 0.0f, 4.0f };
+    float  _itemSpacingY  = 3.0f;
 
-    float _lineNoSpacing   = 4.0f;
-    float _textLineSpacing = 8.0f;
+    float _lineNoLeftSpacing  = 12.0f;
+    float _lineNoRightSpacing = 4.0f;
+
+    float _textLineLeftSpacing  = 8.0f;
+    float _textLineRightSpacing = 100.0f;
 
     float _lineHeight = 1.0f;
 };
