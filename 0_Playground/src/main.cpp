@@ -315,6 +315,7 @@ int main(int, char**)
 					editor.GetLanguageDefinition().mName.c_str(), fileToEdit);
 
 		editor.Render("TextEditor");
+
 		ImGui::End();
 
 		// Rendering

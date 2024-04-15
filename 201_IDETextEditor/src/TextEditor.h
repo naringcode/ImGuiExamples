@@ -34,7 +34,14 @@ public:
     {
         std::vector<CharInfo> text; // without '\0'
 
-        ImVec2 lineSize; // text line size
+        ImVec2 size; // text line size
+    };
+
+    struct LineNumber
+    {
+        std::string numStr;
+
+        ImVec2 size;
     };
 
     // using TextLine = std::vector<CharInfo>;
@@ -73,11 +80,16 @@ public:
 
     ~TextEditor() = default;
 
-public:
-    void Render(bool* open = nullptr);
+    TextEditor(const TextEditor& rhs) = delete;
+    TextEditor(TextEditor&& rhs) noexcept = delete;
 
-    // void RenderAsWindow(bool* open = nullptr);
-    // void RenderAsChildWindow();
+    TextEditor& operator=(const TextEditor& rhs) = delete;
+    TextEditor& operator=(TextEditor&& rhs) noexcept = delete;
+
+
+public:
+    void RenderWindow(bool* open = nullptr);
+    void RenderChildWindow(float footerSpacingY = 0.0f); // editor content only (affected by a parent window)
 
 private:
     void handleKeyboardInputs();
@@ -162,8 +174,8 @@ public:
     void calcAllTextLineSizes();
     void calcTextLineSize(int32_t lineIdx);
 
-    void calcAllLineNoSizes();
-    void calcLineNoSize(int32_t lineIdx);
+    void calcAllLineNumSizes();
+    void calcLineNumSize(int32_t lineIdx);
 
     // TODO : how to colorize comments?
     // void colorizeAllTextLines();
@@ -172,7 +184,7 @@ public:
     float  getMaxTextLineWidth() const;
     ImVec2 getMainContentRegionFullSize() const;
 
-    float getMaxLineNoWidth() const;
+    float getMaxLineNumWidth() const;
 
 public:
     void SetWindowTitle(const std::string_view& windowTitle /* = "default window name" */)
@@ -228,8 +240,8 @@ private:
     std::vector<std::vector<StyleVarItem>>   _styleVarStackList;
     std::vector<std::vector<StyleColorItem>> _styleColStackList;
 
-    std::vector<TextLine> _textLines;
-    std::vector<ImVec2>   _lineNoSizes;
+    std::vector<TextLine>   _textLines;
+    std::vector<LineNumber> _lineNums;
 
     std::unordered_set<int32_t> _breakPoints; // TODO : thread safe
 
@@ -239,7 +251,7 @@ private:
      * Update
      */
     bool _deferredUpdate_calcAllTextLineSizes = false;
-    bool _deferredUpdate_calcAllLineNoSizes = false;
+    bool _deferredUpdate_calcAllLineNumSizes = false;
 
     /**
      * Rendering Info
@@ -247,8 +259,8 @@ private:
     ImVec2 _mainContentPadding = ImVec2{ 0.0f, 4.0f };
     float  _itemSpacingY = 3.0f;
 
-    float _lineNoLeftSpacing  = 12.0f;
-    float _lineNoRightSpacing = 4.0f;
+    float _lineNumLeftSpacing  = 12.0f;
+    float _lineNumRightSpacing = 4.0f;
 
     float _textLineLeftSpacing  = 8.0f;
     float _textLineRightSpacing = 100.0f;
