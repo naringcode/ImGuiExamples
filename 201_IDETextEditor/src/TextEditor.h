@@ -174,8 +174,10 @@ public:
     void calcAllTextLineSizes();
     void calcTextLineSize(int32_t lineIdx);
 
-    void calcAllLineNumSizes();
-    void calcLineNumSize(int32_t lineIdx);
+    void updateAdditionalLineNums();
+
+    void calcAllLineNumSizes(); // call when we change a font type
+    void calcLineNumSize(int32_t lineNum);
 
     // TODO : how to colorize comments?
     // void colorizeAllTextLines();
@@ -251,7 +253,9 @@ private:
      * Update
      */
     bool _deferredUpdate_calcAllTextLineSizes = false;
-    bool _deferredUpdate_calcAllLineNumSizes = false;
+    bool _deferredUpdate_calcAllLineNumSizes  = false; // set true when we change a font type
+
+    std::vector<int32_t> _deferredUpdate_additionalLineNumIndices;
 
     /**
      * Rendering Info

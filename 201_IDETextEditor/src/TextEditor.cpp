@@ -474,6 +474,8 @@ void TextEditor::updateBeforeRender()
 
         this->calcAllLineNumSizes();
     }
+
+    this->updateAdditionalLineNums();
 }
 
 void TextEditor::updateAfterRender()
@@ -501,6 +503,22 @@ void TextEditor::calcTextLineSize(int32_t lineIdx)
     _textLines[lineIdx].size = ImGui::GetFont()->CalcTextSizeA(ImGui::GetFontSize(), FLT_MAX, 0.0f, _textBuffer.c_str());
 }
 
+void TextEditor::updateAdditionalLineNums()
+{
+    for (int32_t idx = 0; idx < _deferredUpdate_additionalLineNumIndices.size(); idx++)
+    {
+        int32_t lineNum = _deferredUpdate_additionalLineNumIndices[idx];
+
+        _lineNums.emplace_back();
+
+        _lineNums.back().numStr = std::to_string(lineNum);
+
+        this->calcLineNumSize(lineNum - 1); // idx = num - 1
+    }
+
+    _deferredUpdate_additionalLineNumIndices.clear();
+}
+
 void TextEditor::calcAllLineNumSizes()
 {
     for (int32_t lineIdx = 0; lineIdx < _textLines.size(); lineIdx++)
@@ -511,12 +529,7 @@ void TextEditor::calcAllLineNumSizes()
 
 void TextEditor::calcLineNumSize(int32_t lineIdx)
 {
-    std::array<char, g_kShortBufferLen> strBuffer;
-
-    auto strBackIter = std::format_to(strBuffer.begin(), "{}", lineIdx + 1);
-    *strBackIter = '\0';
-
-    _lineNums[lineIdx].size = ImGui::GetFont()->CalcTextSizeA(ImGui::GetFontSize(), FLT_MAX, 0.0f, strBuffer.data());
+    _lineNums[lineIdx].size = ImGui::GetFont()->CalcTextSizeA(ImGui::GetFontSize(), FLT_MAX, 0.0f, _lineNums[lineIdx].numStr.c_str());
 }
 
 float TextEditor::getMaxTextLineWidth() const
@@ -562,10 +575,6 @@ void TextEditor::SetText(const std::string_view& text)
     _textLines.clear();
     _textLines.emplace_back();
 
-    _lineNums.clear();
-    _lineNums.emplace_back();
-    _lineNums[0].numStr = "1";
-
     for (auto ch : text)
     {
         // if ('r' == ch)
@@ -577,9 +586,6 @@ void TextEditor::SetText(const std::string_view& text)
         if ('\n' == ch)
         {
             _textLines.emplace_back();
-
-            _lineNums.emplace_back();
-            _lineNums[_lineNums.size() - 1].numStr = std::to_string(_lineNums.size());
         }
         else // characters
         {
@@ -587,6 +593,13 @@ void TextEditor::SetText(const std::string_view& text)
         }   
     }
 
+    if (_lineNums.size() < _textLines.size())
+    {
+        for (int32_t idx = (int32_t)_lineNums.size(); idx < _textLines.size(); idx++)
+        {
+            _deferredUpdate_additionalLineNumIndices.push_back(idx + 1);
+        }
+    }
+
     _deferredUpdate_calcAllTextLineSizes = true;
-    _deferredUpdate_calcAllLineNumSizes = true;
 }
