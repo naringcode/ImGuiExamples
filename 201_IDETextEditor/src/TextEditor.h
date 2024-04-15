@@ -8,7 +8,9 @@
  */
 #include <cstdint>
 
+#include <array>
 #include <vector>
+#include <queue>
 #include <unordered_map>
 #include <unordered_set>
 
@@ -28,7 +30,14 @@ public:
         char ch;
     };
 
-    using TextLine = std::vector<CharInfo>;
+    struct TextLine
+    {
+        std::vector<CharInfo> text; // without '\0'
+
+        ImVec2 lineSize; // text line size
+    };
+
+    // using TextLine = std::vector<CharInfo>;
 
     struct StyleVarItem
     {
@@ -66,6 +75,9 @@ public:
 
 public:
     void Render(bool* open = nullptr);
+
+    // void RenderAsWindow(bool* open = nullptr);
+    // void RenderAsChildWindow();
 
 private:
     void handleKeyboardInputs();
@@ -144,6 +156,25 @@ private:
     }
 
 public:
+    void updateBeforeRender();
+    void updateAfterRender();
+
+    void calcAllTextLineSizes();
+    void calcTextLineSize(int32_t lineIdx);
+
+    void calcAllLineNoSizes();
+    void calcLineNoSize(int32_t lineIdx);
+
+    // TODO : how to colorize comments?
+    // void colorizeAllTextLines();
+    // void colorizeTextLine(int32_t lineIdx);
+
+    float  getMaxTextLineWidth() const;
+    ImVec2 getMainContentRegionFullSize() const;
+
+    float getMaxLineNoWidth() const;
+
+public:
     void SetWindowTitle(const std::string_view& windowTitle /* = "default window name" */)
     {
         _windowTitle = windowTitle;
@@ -198,16 +229,23 @@ private:
     std::vector<std::vector<StyleColorItem>> _styleColStackList;
 
     std::vector<TextLine> _textLines;
+    std::vector<ImVec2>   _lineNoSizes;
 
     std::unordered_set<int32_t> _breakPoints; // TODO : thread safe
 
     float _footerSpacingY = 0.0f; // to calculate the height of contents body
 
     /**
+     * Update
+     */
+    bool _deferredUpdate_calcAllTextLineSizes = false;
+    bool _deferredUpdate_calcAllLineNoSizes = false;
+
+    /**
      * Rendering Info
      */
-    ImVec2 _editorPadding = ImVec2{ 0.0f, 4.0f };
-    float  _itemSpacingY  = 3.0f;
+    ImVec2 _mainContentPadding = ImVec2{ 0.0f, 4.0f };
+    float  _itemSpacingY = 3.0f;
 
     float _lineNoLeftSpacing  = 12.0f;
     float _lineNoRightSpacing = 4.0f;
@@ -216,4 +254,7 @@ private:
     float _textLineRightSpacing = 100.0f;
 
     float _lineHeight = 1.0f;
+
+    // the length of text line cannot be defined at a compile time.
+    std::string _textBuffer = "";
 };
