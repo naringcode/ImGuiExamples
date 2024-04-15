@@ -89,7 +89,7 @@ public:
 
 public:
     void RenderWindow(bool* open = nullptr);
-    void RenderChildWindow(float footerSpacingY = 0.0f); // editor content only (affected by a parent window)
+    void RenderChildWindow(float bottomSpacingY = 0.0f);
 
 private:
     void handleKeyboardInputs();

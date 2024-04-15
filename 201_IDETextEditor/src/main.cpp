@@ -174,8 +174,6 @@ int main(int argc, char* argv[])
         ImGui::Text("Footer | Lang : C++");
     });
 
-    TextEditor textEditor2;
-
     // Set Text
     {
         std::ifstream in("src/TextEditor.cpp");
@@ -185,7 +183,6 @@ int main(int argc, char* argv[])
             std::string str{ std::istreambuf_iterator<char>(in), std::istreambuf_iterator<char>() };
 
             textEditor.SetText(str);
-            textEditor2.SetText(str);
         }
     }
     
@@ -217,7 +214,7 @@ int main(int argc, char* argv[])
         ImGui::Begin("Test Window", nullptr);
         ImGui::Text("AAABBBCCC");
         ImGui::Text("AAABBBCCC");
-        textEditor2.RenderChildWindow(100.0f);
+        textEditor.RenderChildWindow(100.0f);
         ImGui::Text("AAABBBCCC");
         ImGui::Text("AAABBBCCC");
         ImGui::End();

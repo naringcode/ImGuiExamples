@@ -70,18 +70,50 @@ void TextEditor::RenderWindow(bool* open)
     this->updateAfterRender();
 }
 
-void TextEditor::RenderChildWindow(float footerSpacingY)
+void TextEditor::RenderChildWindow(float bottomSpacingY)
 {
     this->updateBeforeRender();
 
+    _footerSpacingY += bottomSpacingY;
+
     // Old : PushStyleVar() have to be placed here before calling ImGui::Begin() which creates a new window.
     // this->pushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{ 4.0f, 4.0f });
+    
+    /**
+     * Menu
+     */
+    this->renderMenu();
 
+    /**
+     * Header
+     */
     this->beginStyle();
     {
-        _footerSpacingY = footerSpacingY;
+        // this->pushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{ 2.0f, 2.0f });
 
+        this->renderHeader();
+    }
+    this->endStyle();
+
+    /**
+     * Editor
+     */
+    this->beginStyle();
+    {
         this->renderEditor();
+    }
+    this->endStyle();
+
+    ImGui::Spacing(); // without calling Spacing(), the following footer adjoins the editor closely.
+
+    /**
+     * Footer
+     */
+    this->beginStyle();
+    {
+        // this->pushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{ 2.0f, 2.0f });
+
+        this->renderFooter();
     }
     this->endStyle();
 
@@ -409,6 +441,8 @@ void TextEditor::renderFooter()
     constexpr ImGuiWindowFlags kWindowFlags = ImGuiWindowFlags_None;
 
     std::array<char, g_kShortBufferLen> strBuffer;
+
+    _footerSpacingY = 0.0f;
 
     if (_renderFooterCallback)
     {
