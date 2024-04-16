@@ -214,7 +214,16 @@ int main(int argc, char* argv[])
         ImGui::Begin("Test Window", nullptr);
         ImGui::Text("AAABBBCCC");
         ImGui::Text("AAABBBCCC");
-        textEditor.RenderChildWindow(100.0f);
+        //textEditor.RenderChildWindow(ImVec2{ 0.0f, 200.0f });
+
+        ImGui::Text("AAABBBCCC");
+
+        textEditor.SetWindowTitle("Child Window##1");
+        textEditor.RenderChildWindow(ImVec2{ 300.0f, 200.0f });
+        ImGui::SameLine();
+        textEditor.SetWindowTitle("Child Window##2");
+        textEditor.RenderChildWindow(ImVec2{ 300.0f, 200.0f });
+
         ImGui::Text("AAABBBCCC");
         ImGui::Text("AAABBBCCC");
         ImGui::End();

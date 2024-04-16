@@ -37,7 +37,7 @@ void TextEditor::RenderWindow(bool* open)
         {
             // this->pushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{ 2.0f, 2.0f });
 
-            this->renderHeader();
+            this->renderHeader(0.0f);
         }
         this->endStyle();
 
@@ -46,7 +46,7 @@ void TextEditor::RenderWindow(bool* open)
          */
         this->beginStyle();
         {
-            this->renderEditor();
+            this->renderEditor(ImVec2{ 0.0f, 0.0f });
         }
         this->endStyle();
 
@@ -59,7 +59,7 @@ void TextEditor::RenderWindow(bool* open)
         {
             // this->pushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{ 2.0f, 2.0f });
 
-            this->renderFooter();
+            this->renderFooter(0.0f);
         }
         this->endStyle();
     }
@@ -70,54 +70,49 @@ void TextEditor::RenderWindow(bool* open)
     this->updateAfterRender();
 }
 
-void TextEditor::RenderChildWindow(float bottomSpacingY)
+void TextEditor::RenderChildWindow(ImVec2 editorFrameSize)
 {
     this->updateBeforeRender();
-
-    _footerSpacingY += bottomSpacingY;
 
     // Old : PushStyleVar() have to be placed here before calling ImGui::Begin() which creates a new window.
     // this->pushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{ 4.0f, 4.0f });
     
-    /**
-     * Menu
-     */
-    this->renderMenu();
-
-    /**
-     * Header
-     */
-    this->beginStyle();
+    ImGui::BeginGroup();
     {
-        // this->pushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{ 2.0f, 2.0f });
+        /**
+         * Header
+         */
+        this->beginStyle();
+        {
+            // this->pushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{ 2.0f, 2.0f });
+        
+            this->renderHeader(editorFrameSize.x);
+        }
+        this->endStyle();
 
-        this->renderHeader();
+        /**
+         * Editor
+         */
+        this->beginStyle();
+        {
+            this->renderEditor(editorFrameSize);
+        }
+        this->endStyle();
+
+        ImGui::Spacing(); // without calling Spacing(), the following footer adjoins the editor closely.
+
+        /**
+         * Footer
+         */
+        this->beginStyle();
+        {
+            // this->pushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{ 2.0f, 2.0f });
+        
+            this->renderFooter(editorFrameSize.x);
+        }
+        this->endStyle();
     }
-    this->endStyle();
-
-    /**
-     * Editor
-     */
-    this->beginStyle();
-    {
-        this->renderEditor();
-    }
-    this->endStyle();
-
-    ImGui::Spacing(); // without calling Spacing(), the following footer adjoins the editor closely.
-
-    /**
-     * Footer
-     */
-    this->beginStyle();
-    {
-        // this->pushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{ 2.0f, 2.0f });
-
-        this->renderFooter();
-    }
-    this->endStyle();
-
-    ImGui::Spacing(); // without calling Spacing(), the following footer adjoins the editor closely.
+    ImGui::EndGroup();
 
     this->updateAfterRender();
 }
@@ -130,7 +125,7 @@ void TextEditor::renderMenu()
     }
 }
 
-void TextEditor::renderHeader()
+void TextEditor::renderHeader(float editorFrameWidth)
 {
     constexpr ImGuiChildFlags  kChildFlags  = ImGuiChildFlags_FrameStyle | ImGuiChildFlags_AlwaysUseWindowPadding | ImGuiChildFlags_AutoResizeY;
     constexpr ImGuiWindowFlags kWindowFlags = ImGuiWindowFlags_None;
@@ -142,7 +137,7 @@ void TextEditor::renderHeader()
         auto backIter = std::format_to(strBuffer.begin(), "{}##Header", _windowTitle);
         *backIter = '\0';
 
-        ImGui::BeginChild(strBuffer.data(), ImVec2{0.0f, 0.0f}, kChildFlags, kWindowFlags);
+        ImGui::BeginChild(strBuffer.data(), ImVec2{ editorFrameWidth, 0.0f }, kChildFlags, kWindowFlags);
         {
             _renderHeaderCallback(*this);
         }
@@ -150,7 +145,7 @@ void TextEditor::renderHeader()
     }
 }
 
-void TextEditor::renderEditor()
+void TextEditor::renderEditor(ImVec2 editorFrameSize)
 {
     /**
      * Styles
@@ -185,8 +180,8 @@ void TextEditor::renderEditor()
     ImGuiStyle& style          = ImGui::GetStyle();
     ImDrawList* parentDrawList = ImGui::GetWindowDrawList();
 
-    auto kFrameBorderSize = ImVec2{ style.ChildBorderSize, style.ChildBorderSize };
-    auto kFrameSize       = ImGui::GetContentRegionAvail() - ImVec2{ 0.0f, _footerSpacingY + kFrameBorderSize.y };
+    const auto   kFrameBorderSize = ImVec2{ style.ChildBorderSize, style.ChildBorderSize };    
+    const ImVec2 kFrameSize       = ImVec2{ 0.0f, 0.0f } != editorFrameSize ? editorFrameSize : ImGui::GetContentRegionAvail() - ImVec2{ 0.0f, _footerSpacingY + kFrameBorderSize.y };
 
     std::array<char, g_kShortBufferLen> strBuffer;
 
@@ -435,7 +430,7 @@ void TextEditor::renderEditor()
     ImGui::EndChild(); 
 }
 
-void TextEditor::renderFooter()
+void TextEditor::renderFooter(float editorFrameWidth)
 {
     constexpr ImGuiChildFlags  kChildFlags  = ImGuiChildFlags_FrameStyle | ImGuiChildFlags_AlwaysUseWindowPadding | ImGuiChildFlags_AutoResizeY;
     constexpr ImGuiWindowFlags kWindowFlags = ImGuiWindowFlags_None;
@@ -449,7 +444,7 @@ void TextEditor::renderFooter()
         auto backIter = std::format_to(strBuffer.begin(), "{}##Footer", _windowTitle);
         *backIter = '\0';
 
-        ImGui::BeginChild(strBuffer.data(), ImVec2{ 0.0f, 0.0f }, kChildFlags, kWindowFlags);
+        ImGui::BeginChild(strBuffer.data(), ImVec2{ editorFrameWidth, 0.0f }, kChildFlags, kWindowFlags);
         {
             _renderFooterCallback(*this);
 
@@ -532,7 +527,7 @@ void TextEditor::calcLineNumSize(int32_t lineIdx)
     _lineNums[lineIdx].size = ImGui::GetFont()->CalcTextSizeA(ImGui::GetFontSize(), FLT_MAX, 0.0f, _lineNums[lineIdx].numStr.c_str());
 }
 
-float TextEditor::getMaxTextLineWidth() const
+auto TextEditor::getMaxTextLineWidth() const -> float
 {
     float maxTextLineWidth = 0;
 
@@ -544,7 +539,7 @@ float TextEditor::getMaxTextLineWidth() const
     return maxTextLineWidth;
 }
 
-ImVec2 TextEditor::getMainContentRegionFullSize() const
+auto TextEditor::getMainContentRegionFullSize() const -> ImVec2
 {
     ImVec2 contentRegionFullSize;
 
@@ -561,7 +556,7 @@ ImVec2 TextEditor::getMainContentRegionFullSize() const
     return contentRegionFullSize;
 }
 
-float TextEditor::getMaxLineNumWidth() const
+auto TextEditor::getMaxLineNumWidth() const -> float
 {
     std::string_view maxLineNumStr = _lineNums.back().numStr;
 

@@ -89,16 +89,16 @@ public:
 
 public:
     void RenderWindow(bool* open = nullptr);
-    void RenderChildWindow(float bottomSpacingY = 0.0f);
+    void RenderChildWindow(ImVec2 editorFrameSize = ImVec2{ 0.0f, 0.0f });
 
 private:
     void handleKeyboardInputs();
     void handleMouseInputs();
 
     void renderMenu();
-    void renderHeader();
-    void renderEditor();
-    void renderFooter();
+    void renderHeader(float editorFrameWidth);
+    void renderEditor(ImVec2 editorFrameSize);
+    void renderFooter(float editorFrameWidth);
 
 private:
     void beginStyle()
@@ -183,20 +183,20 @@ public:
     // void colorizeAllTextLines();
     // void colorizeTextLine(int32_t lineIdx);
 
-    float  getMaxTextLineWidth() const;
-    ImVec2 getMainContentRegionFullSize() const;
+    auto getMaxTextLineWidth() const -> float;
+    auto getMainContentRegionFullSize() const -> ImVec2;
 
-    float getMaxLineNumWidth() const;
+    auto getMaxLineNumWidth() const -> float;
 
 public:
-    void SetWindowTitle(const std::string_view& windowTitle /* = "default window name" */)
-    {
-        _windowTitle = windowTitle;
-    }
-
     void SetWindowFlags(ImGuiWindowFlags windowFlags /* = ImGuiWindowFlags_None*/)
     {
         _windowFlags = windowFlags; // | ImGuiWindowFlags_MenuBar;
+    }
+
+    void SetWindowTitle(const std::string_view& windowTitle /* = "default window name" */)
+    {
+        _windowTitle = windowTitle;
     }
 
     void SetNextWindowSize(const ImVec2& nextWindowSize, ImGuiCond condition = ImGuiCond_None)
@@ -232,8 +232,8 @@ public:
     }
 
 private:
-    std::string _windowTitle = "Text Editor Window";
     uint32_t    _windowFlags = ImGuiWindowFlags_None; // | ImGuiWindowFlags_MenuBar;
+    std::string _windowTitle = "Text Editor Window";
 
     std::function<void(TextEditor&)> _renderMenuCallback   = nullptr; // [](TextEditor&) {};
     std::function<void(TextEditor&)> _renderHeaderCallback = nullptr; // [](TextEditor&) {};
