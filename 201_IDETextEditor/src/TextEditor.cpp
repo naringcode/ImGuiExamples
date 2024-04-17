@@ -1,11 +1,13 @@
 #include "TextEditor.h"
 
+// #include <iostream>
+
 #include <format>
 
-// #define SHOW_TEXT_LINE_PIVOT_POS
+#define SHOW_TEXT_LINE_PIVOT_POS
 // #define SHOW_TEXT_LINE_START_POS
 // #define SHOW_BREAKPOINT_FRAME_RECT
-// #define SHOW_BREAKPOINT_BUTTON_RECT
+#define SHOW_BREAKPOINT_BUTTON_RECT
 // #define SHOW_BREAKPOINT_FRAME_MARGIN_RECT
 
 constexpr int32_t g_kShortBufferLen = 256;
@@ -191,7 +193,7 @@ void TextEditor::renderEditor(ImVec2 editorFrameSize)
      * Styles
      */
     this->pushStyleColor(ImGuiCol_ChildBg,     ImGui::ColorConvertU32ToFloat4(IM_COL32(30, 30, 30, 255)));
-    this->pushStyleColor(ImGuiCol_ScrollbarBg, ImGui::ColorConvertU32ToFloat4(IM_COL32(30, 30, 30, 255)));
+    //this->pushStyleColor(ImGuiCol_ScrollbarBg, ImGui::ColorConvertU32ToFloat4(IM_COL32(30, 30, 30, 255)));
     this->pushStyleColor(ImGuiCol_Border,      ImGui::ColorConvertU32ToFloat4(IM_COL32(62, 62, 62, 255)));
     
     // Old : give widths from zero to one by testing, and we handle positions programmatically.
@@ -259,8 +261,8 @@ void TextEditor::renderEditor(ImVec2 editorFrameSize)
          * Variable for Line-Number Frame
          */
         const int32_t kTotalLineNums = (int32_t)_textLines.size();
-        int32_t minLineNum = 0;
-        int32_t maxLineNum = 0;
+        int32_t minLineIdx = 0;
+        int32_t maxLineIdx = 0;
 
         const float kMaxLineNumWidth = this->getMaxLineNumWidth();
 
@@ -309,12 +311,28 @@ void TextEditor::renderEditor(ImVec2 editorFrameSize)
         {
             ImDrawList* childDrawList = ImGui::GetWindowDrawList();
             
-            ImVec2 renderPivot = _mainContentPadding + ImVec2{ 0.0f, _textLineTopSpacing };
-            
             scrollX = ImGui::GetScrollX();
             scrollY = ImGui::GetScrollY();
 
-            for (int32_t lineIdx = 0; lineIdx < kTotalLineNums; lineIdx++)
+            // ** when you are using scrolling and if you want to get the content height, you have to type the following code **
+            // scrollY + ImGui::GetContentRegionMax().y
+            // scrollY + ImGui::GetWindowContentRegionMax().y
+            minLineIdx = (int32_t)std::floor((scrollY - _mainContentPadding.y) / _lineHeight);
+            maxLineIdx = minLineIdx + (int32_t)std::floor((scrollY + ImGui::GetWindowContentRegionMax().y) / _lineHeight);
+
+            // adding 1 means that we calculate the maximum height including the index itself
+            if ((float)((maxLineIdx + 1) * _lineHeight) < (kMainContentSize.y - style.ScrollbarSize) + scrollY - _mainContentPadding.y)
+            {
+                maxLineIdx++;
+            }
+
+            minLineIdx = std::max(0, minLineIdx);
+            maxLineIdx = std::min(maxLineIdx, (int32_t)_textLines.size() - 1);
+
+            ImVec2 renderPivot = _mainContentPadding + ImVec2{ 0.0f, _textLineTopSpacing } + ImVec2{ 0.0f, minLineIdx * _lineHeight };
+            
+            // Loop
+            for (int32_t lineIdx = minLineIdx; lineIdx <= maxLineIdx; lineIdx++)
             {
                 ImGui::SetCursorPosX(renderPivot.x);
                 ImGui::SetCursorPosY(renderPivot.y);
@@ -326,7 +344,7 @@ void TextEditor::renderEditor(ImVec2 editorFrameSize)
                 // Line Markers
                 if (true == _showLineMarkers)
                 {
-                    auto sp = ImVec2{ ImGui::GetCursorScreenPos().x, ImGui::GetCursorScreenPos().y };
+                    auto sp = ImVec2{ ImGui::GetCursorScreenPos().x + scrollX, ImGui::GetCursorScreenPos().y };
                     auto ep = ImVec2{ sp.x, sp.y + kFontHeight };
 
                     childDrawList->AddLine(sp, ep, IM_COL32(165, 165, 165, 255));
@@ -350,10 +368,10 @@ void TextEditor::renderEditor(ImVec2 editorFrameSize)
                 }
 
                 childDrawList->AddText(ImGui::GetCursorScreenPos(), IM_COL32_WHITE, _textBuffer.c_str());
-
+                
                 // Update
                 renderPivot.x = _mainContentPadding.x;
-                renderPivot.y += kFontHeight + _textLineTopSpacing + _textLineBottomSpacing;
+                renderPivot.y += _lineHeight;
             }
 
             // get the full size of the main editor for scrolling
@@ -385,7 +403,7 @@ void TextEditor::renderEditor(ImVec2 editorFrameSize)
             {
                 ImDrawList* childDrawList = ImGui::GetWindowDrawList();
 
-                ImVec2 renderPivot = ImVec2{ 0.0f, _mainContentPadding.y + _textLineTopSpacing };
+                ImVec2 renderPivot = ImVec2{ 0.0f, _mainContentPadding.y + _textLineTopSpacing } + ImVec2{ 0.0f, minLineIdx * _lineHeight };
 
 #ifdef SHOW_BREAKPOINT_FRAME_RECT
                 ImGui::GetForegroundDrawList()->AddCircleFilled(breakPointFrameRectMin, 2.0f, IM_COL32_WHITE);
@@ -397,7 +415,8 @@ void TextEditor::renderEditor(ImVec2 editorFrameSize)
                     childDrawList->AddRectFilled(breakPointFrameRectMin, breakPointFrameRectMax, IM_COL32(51, 51, 51, 255));
                 }
                 
-                for (int32_t lineIdx = 0; lineIdx < kTotalLineNums; lineIdx++)
+                // Loop
+                for (int32_t lineIdx = minLineIdx; lineIdx <= maxLineIdx; lineIdx++)
                 {
                     /**
                      * Break-Point
@@ -477,7 +496,7 @@ void TextEditor::renderEditor(ImVec2 editorFrameSize)
 
                     // Update
                     renderPivot.x = 0.0f;
-                    renderPivot.y += kFontHeight + _textLineTopSpacing + _textLineBottomSpacing;
+                    renderPivot.y += _lineHeight;
                 }
 
                 // set margin of a break-point frame

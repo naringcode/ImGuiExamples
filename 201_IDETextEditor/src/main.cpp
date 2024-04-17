@@ -18,6 +18,9 @@
 // User
 #include "TextEditor.h"
 
+#define USE_POLL_EVENT
+// #define USE_WAIT_EVENT
+
 // Variables
 SDL_Window*   g_Window;
 SDL_Renderer* g_Renderer;
@@ -97,14 +100,15 @@ void PollEvents()
 {
     SDL_Event event;
 
+#if defined(USE_POLL_EVENT)
     while (SDL_PollEvent(&event))
     {
         ImGui_ImplSDL2_ProcessEvent(&event);
-
+    
         if (SDL_QUIT == event.type)
         {
             g_IsRunning = false;
-
+    
             break;
         }
         else if (SDL_KEYDOWN == event.type)
@@ -112,11 +116,37 @@ void PollEvents()
             if (SDLK_ESCAPE == event.key.keysym.sym)
             {
                 g_IsRunning = false;
-
+    
                 break;
             }
         }
     }
+#elif defined(USE_WAIT_EVENT)
+    if (SDL_WaitEvent(&event))
+    {
+        do
+        {
+            ImGui_ImplSDL2_ProcessEvent(&event);
+
+            if (SDL_QUIT == event.type)
+            {
+                g_IsRunning = false;
+
+                break;
+            }
+            else if (SDL_KEYDOWN == event.type)
+            {
+                if (SDLK_ESCAPE == event.key.keysym.sym)
+                {
+                    g_IsRunning = false;
+
+                    break;
+                }
+            }
+
+        } while (SDL_PollEvent(&event));
+    }
+#endif
 }
 
 void BeginFrame()
@@ -326,50 +356,81 @@ int main(int argc, char* argv[])
             textEditor.SetText(str);
         }
     }
-    
+
+    // Framerate
+    constexpr double kDesiredFps   = 60.0;
+    // constexpr double kMaxDeltaTime = 1.0 / 10.0; // 최대 프레임 간격(초 단위)
+
+    Uint32 currTicks;
+    Uint32 lastTicks;
+
+    double deltaTime = 0.0;
+
     // Main Logic
     while (true == g_IsRunning)
     {
-        PollEvents();
-
-        BeginFrame();
-
-        if (ImGui::BeginMainMenuBar())
+        lastTicks = SDL_GetTicks();
         {
-            if (false == isTextEditorOpened && ImGui::Button("Open Editor"))
+            PollEvents();
+
+            BeginFrame();
+
+            if (ImGui::BeginMainMenuBar())
             {
-                isTextEditorOpened = true;
-            }
-            else if (isTextEditorOpened && ImGui::Button("Close Editor"))
-            {
-                isTextEditorOpened = false;
-            }
+                if (false == isTextEditorOpened && ImGui::Button("Open Editor"))
+                {
+                    isTextEditorOpened = true;
+                }
+                else if (isTextEditorOpened && ImGui::Button("Close Editor"))
+                {
+                    isTextEditorOpened = false;
+                }
         
-            ImGui::EndMainMenuBar();
+                ImGui::EndMainMenuBar();
+            }
+
+            textEditor.SetNextWindowSize(ImVec2{ 800.0f, 600.0f }, ImGuiCond_FirstUseEver);
+            textEditor.SetWindowTitle("Main Window##1");
+            textEditor.RenderWindow(&isTextEditorOpened);
+        
+            // ImGui::SetNextWindowSize(ImVec2{ 800.0f, 600.0f }, ImGuiCond_FirstUseEver);
+            // ImGui::Begin("Test Window", nullptr);
+            // ImGui::Text("AAABBBCCC");
+            // ImGui::Text("AAABBBCCC");
+            // //textEditor.RenderChildWindow(ImVec2{ 0.0f, 200.0f });
+            // 
+            // ImGui::Text("AAABBBCCC");
+            // 
+            // textEditor.SetWindowTitle("Child Window##1");
+            // textEditor.RenderChildWindow(ImVec2{ 300.0f, 200.0f });
+            // ImGui::SameLine();
+            // textEditor.SetWindowTitle("Child Window##2");
+            // textEditor.RenderChildWindow(ImVec2{ 0.0f, 200.0f });
+            // 
+            // ImGui::Text("AAABBBCCC");
+            // ImGui::Text("AAABBBCCC");
+            // ImGui::End();
+
+            EndFrame();
         }
+        currTicks = SDL_GetTicks();
 
-        textEditor.SetNextWindowSize(ImVec2{ 800.0f, 600.0f }, ImGuiCond_FirstUseEver);
-        textEditor.RenderWindow(&isTextEditorOpened);
-        
-        //ImGui::SetNextWindowSize(ImVec2{ 800.0f, 600.0f }, ImGuiCond_FirstUseEver);
-        //ImGui::Begin("Test Window", nullptr);
-        //ImGui::Text("AAABBBCCC");
-        //ImGui::Text("AAABBBCCC");
-        ////textEditor.RenderChildWindow(ImVec2{ 0.0f, 200.0f });
-        //
-        //ImGui::Text("AAABBBCCC");
-        //
-        //textEditor.SetWindowTitle("Child Window##1");
-        //textEditor.RenderChildWindow(ImVec2{ 300.0f, 200.0f });
-        //ImGui::SameLine();
-        //textEditor.SetWindowTitle("Child Window##2");
-        //textEditor.RenderChildWindow(ImVec2{ 0.0f, 200.0f });
-        //
-        //ImGui::Text("AAABBBCCC");
-        //ImGui::Text("AAABBBCCC");
-        //ImGui::End();
+        deltaTime = (currTicks - lastTicks) / 1000.0; // 초 단위로 변환
 
-        EndFrame();
+        // 만약 프레임이 튀는 상황이 발생하면 적용하도록 한다.
+        // // 최대 시간 제한
+        // if (deltaTime > kMaxDeltaTime)
+        // {
+        //     deltaTime = kMaxDeltaTime;
+        // }
+
+        // Fps에 맞게 딜레이 적용
+        double frameDelay = (1.0 / kDesiredFps) - deltaTime;
+
+        if (frameDelay > 0.0)
+        {
+            SDL_Delay((Uint32)(frameDelay * 1000)); // 밀리 초
+        }
     }
 
     Shutdown();
