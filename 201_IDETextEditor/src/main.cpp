@@ -234,14 +234,14 @@ int main(int argc, char* argv[])
     
             if (ImGui::BeginMenu("Fonts"))
             {
-                if (ImGui::MenuItem("Default"))
+                if (ImGui::MenuItem("Default, 13pt"))
                 {
                     currentFont = defaultFont;
 
                     textEditor.ChangeFont(currentFont);
                 }
 
-                if (ImGui::MenuItem("Consolas"))
+                if (ImGui::MenuItem("Consolas, 16pt"))
                 {
                     currentFont = consolasFont;
 
@@ -351,23 +351,23 @@ int main(int argc, char* argv[])
         textEditor.SetNextWindowSize(ImVec2{ 800.0f, 600.0f }, ImGuiCond_FirstUseEver);
         textEditor.RenderWindow(&isTextEditorOpened);
         
-        ImGui::SetNextWindowSize(ImVec2{ 800.0f, 600.0f }, ImGuiCond_FirstUseEver);
-        ImGui::Begin("Test Window", nullptr);
-        ImGui::Text("AAABBBCCC");
-        ImGui::Text("AAABBBCCC");
+        //ImGui::SetNextWindowSize(ImVec2{ 800.0f, 600.0f }, ImGuiCond_FirstUseEver);
+        //ImGui::Begin("Test Window", nullptr);
+        //ImGui::Text("AAABBBCCC");
+        //ImGui::Text("AAABBBCCC");
+        ////textEditor.RenderChildWindow(ImVec2{ 0.0f, 200.0f });
+        //
+        //ImGui::Text("AAABBBCCC");
+        //
+        //textEditor.SetWindowTitle("Child Window##1");
+        //textEditor.RenderChildWindow(ImVec2{ 300.0f, 200.0f });
+        //ImGui::SameLine();
+        //textEditor.SetWindowTitle("Child Window##2");
         //textEditor.RenderChildWindow(ImVec2{ 0.0f, 200.0f });
-        
-        ImGui::Text("AAABBBCCC");
-        
-        textEditor.SetWindowTitle("Child Window##1");
-        textEditor.RenderChildWindow(ImVec2{ 300.0f, 200.0f });
-        ImGui::SameLine();
-        textEditor.SetWindowTitle("Child Window##2");
-        textEditor.RenderChildWindow(ImVec2{ 0.0f, 200.0f });
-        
-        ImGui::Text("AAABBBCCC");
-        ImGui::Text("AAABBBCCC");
-        ImGui::End();
+        //
+        //ImGui::Text("AAABBBCCC");
+        //ImGui::Text("AAABBBCCC");
+        //ImGui::End();
 
         EndFrame();
     }

@@ -2,6 +2,12 @@
 
 #include <format>
 
+// #define SHOW_TEXT_LINE_PIVOT_POS
+// #define SHOW_TEXT_LINE_START_POS
+// #define SHOW_BREAKPOINT_FRAME_RECT
+// #define SHOW_BREAKPOINT_BUTTON_RECT
+// #define SHOW_BREAKPOINT_FRAME_MARGIN_RECT
+
 constexpr int32_t g_kShortBufferLen = 256;
 
 void TextEditor::RenderWindow(bool* open)
@@ -26,9 +32,6 @@ void TextEditor::RenderWindow(bool* open)
 
     ImGui::Begin(_windowTitle.c_str(), open, _windowFlags);
     {
-        // Old : Debug Code for Window Padding Test
-        // ImGui::GetWindowDrawList()->AddCircleFilled(ImGui::GetCursorScreenPos(), 24.0f, IM_COL32_WHITE);
-
         /**
          * Menu
          */
@@ -249,7 +252,8 @@ void TextEditor::renderEditor(ImVec2 editorFrameSize)
         ImVec2 breakPointFrameRectMin = ImGui::GetWindowPos() + kFrameBorderSize;
         ImVec2 breakPointFrameRectMax = breakPointFrameRectMin + breakPointFrameSize;
             
-        ImVec2 breakPointButtonSize = ImVec2{ breakPointFrameSize.x, breakPointFrameSize.x + 0.0f };
+        // ImVec2 breakPointButtonSize = ImVec2{ breakPointFrameSize.x, breakPointFrameSize.x + 0.0f };
+        ImVec2 breakPointButtonSize = ImVec2{ breakPointFrameSize.x, _lineHeight };
 
         /**
          * Variable for Line-Number Frame
@@ -315,8 +319,9 @@ void TextEditor::renderEditor(ImVec2 editorFrameSize)
                 ImGui::SetCursorPosX(renderPivot.x);
                 ImGui::SetCursorPosY(renderPivot.y);
 
-                // Debug Code (Text Line Start Pos)
-                // ImGui::GetForegroundDrawList()->AddCircle(ImGui::GetCursorScreenPos(), 1.6f, IM_COL32(255, 0, 255, 255));
+#ifdef SHOW_TEXT_LINE_PIVOT_POS
+                ImGui::GetForegroundDrawList()->AddCircle(ImGui::GetCursorScreenPos() - ImVec2{ 0.0f, _textLineTopSpacing }, 1.6f, IM_COL32(255, 0, 255, 255));
+#endif
 
                 // Line Markers
                 if (true == _showLineMarkers)
@@ -333,8 +338,9 @@ void TextEditor::renderEditor(ImVec2 editorFrameSize)
                 ImGui::SetCursorPosX(renderPivot.x + _textLineLeftSpacing);
                 ImGui::SetCursorPosY(renderPivot.y);
 
-                // Debug Code (Text Line Pos)
-                // ImGui::GetForegroundDrawList()->AddCircle(ImGui::GetCursorScreenPos(), 1.6f, IM_COL32(255, 0, 255, 255));
+#ifdef SHOW_TEXT_LINE_START_POS
+                ImGui::GetForegroundDrawList()->AddCircle(ImGui::GetCursorScreenPos(), 1.6f, IM_COL32(255, 0, 255, 255));
+#endif
 
                 _textBuffer.clear();
 
@@ -381,9 +387,10 @@ void TextEditor::renderEditor(ImVec2 editorFrameSize)
 
                 ImVec2 renderPivot = ImVec2{ 0.0f, _mainContentPadding.y + _textLineTopSpacing };
 
-                // Debug Code (Frame Size)
-                // ImGui::GetForegroundDrawList()->AddCircleFilled(breakPointFrameRectMin, 2.0f, IM_COL32_WHITE);
-                // ImGui::GetForegroundDrawList()->AddCircleFilled(breakPointFrameRectMax, 2.0f, IM_COL32_WHITE);
+#ifdef SHOW_BREAKPOINT_FRAME_RECT
+                ImGui::GetForegroundDrawList()->AddCircleFilled(breakPointFrameRectMin, 2.0f, IM_COL32_WHITE);
+                ImGui::GetForegroundDrawList()->AddCircleFilled(breakPointFrameRectMax, 2.0f, IM_COL32_WHITE);
+#endif
 
                 if (true == _showBreakPoints)
                 {
@@ -398,17 +405,18 @@ void TextEditor::renderEditor(ImVec2 editorFrameSize)
                     if (true == _showBreakPoints)
                     {
                         ImGui::SetCursorPosX(renderPivot.x);
-                        ImGui::SetCursorPosY(renderPivot.y - 2.0f); // give -2.0f for a visual beauty.
+                        ImGui::SetCursorPosY(renderPivot.y - _textLineTopSpacing - 2.0f); // give -2.0f for a visual beauty.
 
-                        // Debug Code (Break-Point Rect)
-                        // ImGui::GetForegroundDrawList()->AddRect(ImGui::GetCursorScreenPos(), ImGui::GetCursorScreenPos() + ImVec2{ breakPointFrameSize.x, breakPointFrameSize.x }, IM_COL32_WHITE);
-                        // ImGui::GetForegroundDrawList()->AddCircleFilled(ImGui::GetCursorScreenPos(), 2, IM_COL32_WHITE);
+#ifdef SHOW_BREAKPOINT_BUTTON_RECT
+                        ImGui::GetForegroundDrawList()->AddRect(ImGui::GetCursorScreenPos(), ImGui::GetCursorScreenPos() + ImVec2{ breakPointButtonSize.x, breakPointButtonSize.y }, IM_COL32_WHITE);
+                        ImGui::GetForegroundDrawList()->AddCircleFilled(ImGui::GetCursorScreenPos(), 2, IM_COL32_WHITE);
+#endif
 
                         // Break-Point Pos
                         ImVec2 breakPointPos = ImGui::GetCursorScreenPos();
                         {
                             breakPointPos.x += breakPointFrameSize.x * 0.5f;
-                            breakPointPos.y += breakPointFrameSize.x * 0.5f;
+                            breakPointPos.y += breakPointFrameSize.x * 0.5f + _textLineTopSpacing;
                         }
 
                         //
@@ -418,8 +426,8 @@ void TextEditor::renderEditor(ImVec2 editorFrameSize)
                         *strBackIter = '\0';
 
                         // Break-Point Button
-                        if (ImGui::Button(std::format("##{}", lineIdx).c_str(), breakPointButtonSize))
-                        // if (ImGui::InvisibleButton(strBuffer.data(), breakPointButtonSize))
+                        // if (ImGui::Button(std::format("##{}", lineIdx).c_str(), breakPointButtonSize))
+                        if (ImGui::InvisibleButton(strBuffer.data(), breakPointButtonSize))
                         {
                             if (_breakPoints.end() == breakPointIter)
                             {
@@ -433,7 +441,14 @@ void TextEditor::renderEditor(ImVec2 editorFrameSize)
 
                         if (_breakPoints.end() != breakPointIter)
                         {
-                            childDrawList->AddCircleFilled(breakPointPos, breakPointFrameSize.x * 0.4f, IM_COL32(197, 81, 89, 255));
+                            if (false == ImGui::IsItemHovered())
+                            {
+                                childDrawList->AddCircleFilled(breakPointPos, breakPointFrameSize.x * 0.4f, IM_COL32(197, 81, 89, 255));
+                            }
+                            else // if (ImGui::IsItemHovered())
+                            {
+                                childDrawList->AddCircleFilled(breakPointPos, breakPointFrameSize.x * 0.4f, IM_COL32(245, 141, 149, 255));
+                            }
                         }
 
                         if (ImGui::IsItemHovered() && _breakPoints.end() == breakPointIter)
@@ -469,8 +484,9 @@ void TextEditor::renderEditor(ImVec2 editorFrameSize)
                 ImVec2 marginBreakPointFrameMin = ImVec2{ breakPointFrameRectMin.x, breakPointFrameRectMax.y };
                 ImVec2 marginBreakPointFrameMax = ImVec2{ breakPointFrameRectMax.x, marginBreakPointFrameMin.y + style.ScrollbarSize };
 
-                // Debug Code
-                // ImGui::GetForegroundDrawList()->AddRect(marginBreakPointFrameMin, marginBreakPointFrameMax, IM_COL32(255, 0, 255, 255));
+#ifdef SHOW_BREAKPOINT_FRAME_MARGIN_RECT
+                ImGui::GetForegroundDrawList()->AddRect(marginBreakPointFrameMin, marginBreakPointFrameMax, IM_COL32(255, 0, 255, 255));
+#endif
 
                 if (true == _showBreakPoints)
                 {

@@ -14,11 +14,6 @@
   - GetStyle() -> style.Colors[ImGuiCol_XXX] = ImVec4(...)
 
 
-- Fonts 프로젝트
-  - 기본 폰트(ProggyClean)에서 지원하지 않는 문자를 읽을 수 있게 하기(문자 이미지를 추가해서 어떻게 하면 될 것 같음)
-  - Font->AddGlyph()
-
-
 ## Widget
 
 - TextEditor like IDE(Breakpoints, Line Numbers, Edit Texts)
