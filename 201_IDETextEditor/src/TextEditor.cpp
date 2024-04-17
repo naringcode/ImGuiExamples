@@ -18,7 +18,11 @@ void TextEditor::RenderWindow(bool* open)
 
     this->pushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{ 8.0f, 8.0f });
     this->pushStyleColor(ImGuiCol_WindowBg, ImGui::ColorConvertU32ToFloat4(IM_COL32(30, 30, 30, 255)));
-    this->pushStyleColor(ImGuiCol_ResizeGrip, ImVec4{ 0.0f, 0.0f, 0.0f, 0.0f });
+
+    if (false == _showWindowResizeGrip)
+    {
+        this->pushStyleColor(ImGuiCol_ResizeGrip, ImVec4{ 0.0f, 0.0f, 0.0f, 0.0f });
+    }
 
     ImGui::Begin(_windowTitle.c_str(), open, _windowFlags);
     {
@@ -127,10 +131,12 @@ void TextEditor::renderMenu()
 
 void TextEditor::renderHeader(float editorFrameWidth)
 {
-    constexpr ImGuiChildFlags  kChildFlags  = ImGuiChildFlags_FrameStyle | ImGuiChildFlags_AlwaysUseWindowPadding | ImGuiChildFlags_AutoResizeY;
+    constexpr ImGuiChildFlags  kChildFlags  = /* ImGuiChildFlags_FrameStyle | */ ImGuiChildFlags_AlwaysUseWindowPadding | ImGuiChildFlags_AutoResizeY;
     constexpr ImGuiWindowFlags kWindowFlags = ImGuiWindowFlags_None;
 
     std::array<char, g_kShortBufferLen> strBuffer;
+
+    this->pushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{ 0.0f, 0.0f });
 
     if (_renderHeaderCallback)
     {
@@ -139,7 +145,38 @@ void TextEditor::renderHeader(float editorFrameWidth)
 
         ImGui::BeginChild(strBuffer.data(), ImVec2{ editorFrameWidth, 0.0f }, kChildFlags, kWindowFlags);
         {
+            this->popStyleVar(1);
+
             _renderHeaderCallback(*this);
+
+        }
+        ImGui::EndChild();
+    }
+}
+
+void TextEditor::renderFooter(float editorFrameWidth)
+{
+    constexpr ImGuiChildFlags  kChildFlags  = /* ImGuiChildFlags_FrameStyle | */ ImGuiChildFlags_AlwaysUseWindowPadding | ImGuiChildFlags_AutoResizeY;
+    constexpr ImGuiWindowFlags kWindowFlags = ImGuiWindowFlags_None;
+
+    std::array<char, g_kShortBufferLen> strBuffer;
+
+    _footerSpacingY = 0.0f;
+
+    this->pushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{ 0.0f, 0.0f });
+
+    if (_renderFooterCallback)
+    {
+        auto backIter = std::format_to(strBuffer.begin(), "{}##Footer", _windowTitle);
+        *backIter = '\0';
+
+        ImGui::BeginChild(strBuffer.data(), ImVec2{ editorFrameWidth, 0.0f }, kChildFlags, kWindowFlags);
+        {
+            this->popStyleVar(1);
+
+            _renderFooterCallback(*this);
+
+            _footerSpacingY = ImGui::GetWindowSize().y + ImGui::GetStyle().ItemSpacing.y;
         }
         ImGui::EndChild();
     }
@@ -165,6 +202,8 @@ void TextEditor::renderEditor(ImVec2 editorFrameSize)
     this->pushStyleVar(ImGuiStyleVar_ScrollbarSize,   14.0f);
     this->pushStyleVar(ImGuiStyleVar_ChildBorderSize, 1.0f);
 
+    ImGui::PushFont(_currFont);
+    
     /**
      * Core Variables
      */
@@ -191,18 +230,16 @@ void TextEditor::renderEditor(ImVec2 editorFrameSize)
     ImGui::BeginChild(strBuffer.data(), kFrameSize, kFrameChildFlags, kFrameWindowFlags);
     {
         /**
-         * Variables for Sizing
+         * Variables for General Info
          */
-        const float kFontHeight = ImGui::GetFont()->CalcTextSizeA(ImGui::GetFontSize(), FLT_MAX, 0.0f, "#").y;
+        const float kFontHeight = _currFont->CalcTextSizeA(_currFont->FontSize, FLT_MAX, 0.0f, "#").y;
         
-        _lineHeight = kFontHeight + _itemSpacingY;
+        _lineHeight = kFontHeight + _textLineTopSpacing + _textLineBottomSpacing;
 
         const ImVec2 kContentSize = kFrameSize - kFrameBorderSize * 2;
 
         float scrollX = 0.0f;
         float scrollY = 0.0f;
-
-        float subContentWidth = 0.0f;
 
         /**
          * Variables for Break-Point Frame
@@ -223,16 +260,28 @@ void TextEditor::renderEditor(ImVec2 editorFrameSize)
 
         const float kMaxLineNumWidth = this->getMaxLineNumWidth();
 
-        // TODO
-        // if breakpoints enabled
+        auto lineNumFrameSize = ImVec2{ kMaxLineNumWidth + _lineNumLeftSpacing + _lineNumRightSpacing, breakPointFrameSize.y };
+
+        /**
+         * Sub Content Width
+         */
+        float subContentWidth = (breakPointFrameSize.x) + (kMaxLineNumWidth + _lineNumLeftSpacing + _lineNumRightSpacing);
+
+        if (false == _showBreakPoints)
         {
-            subContentWidth += breakPointButtonSize.x;
+            subContentWidth -= breakPointFrameSize.x;
+
+            breakPointFrameSize.x = 0.0f;
+
+            // breakPointFrameRectMax.x = breakPointFrameRectMin.x;
+            // breakPointButtonSize.x = 0.0f;
         }
 
-        // TODO
-        // if lineNum enabled
+        if (false == _showLineNums)
         {
-            subContentWidth += kMaxLineNumWidth + _lineNumLeftSpacing + _lineNumRightSpacing;
+            subContentWidth -= lineNumFrameSize.x;
+
+            lineNumFrameSize.x = 0.0f;
         }
 
         /**
@@ -256,7 +305,7 @@ void TextEditor::renderEditor(ImVec2 editorFrameSize)
         {
             ImDrawList* childDrawList = ImGui::GetWindowDrawList();
             
-            ImVec2 renderPivot = _mainContentPadding;
+            ImVec2 renderPivot = _mainContentPadding + ImVec2{ 0.0f, _textLineTopSpacing };
             
             scrollX = ImGui::GetScrollX();
             scrollY = ImGui::GetScrollY();
@@ -269,9 +318,10 @@ void TextEditor::renderEditor(ImVec2 editorFrameSize)
                 // Debug Code (Text Line Start Pos)
                 // ImGui::GetForegroundDrawList()->AddCircle(ImGui::GetCursorScreenPos(), 1.6f, IM_COL32(255, 0, 255, 255));
 
-                // Line Mark
+                // Line Markers
+                if (true == _showLineMarkers)
                 {
-                    auto sp = ImVec2{ ImGui::GetWindowPos().x, ImGui::GetCursorScreenPos().y };
+                    auto sp = ImVec2{ ImGui::GetCursorScreenPos().x, ImGui::GetCursorScreenPos().y };
                     auto ep = ImVec2{ sp.x, sp.y + kFontHeight };
 
                     childDrawList->AddLine(sp, ep, IM_COL32(165, 165, 165, 255));
@@ -297,7 +347,7 @@ void TextEditor::renderEditor(ImVec2 editorFrameSize)
 
                 // Update
                 renderPivot.x = _mainContentPadding.x;
-                renderPivot.y += kFontHeight + _itemSpacingY;
+                renderPivot.y += kFontHeight + _textLineTopSpacing + _textLineBottomSpacing;
             }
 
             // get the full size of the main editor for scrolling
@@ -311,151 +361,165 @@ void TextEditor::renderEditor(ImVec2 editorFrameSize)
         }
         ImGui::EndChild();
         
-        ImGui::SameLine();
-
         /**
          * Sub Content (Breakpoint, Line Num)
          */
-        ImGui::SetNextWindowPos(kSubContentPos);
-        ImGui::SetNextWindowScroll(ImVec2{ 0.0f, scrollY }); // ** scrollY ** this is why we have to render the sub window here.
-
-        strBackIter = std::format_to(strBuffer.begin(), "{}##EditorSub", _windowTitle);
-        *strBackIter = '\0';
-
-        ImGui::BeginChild(strBuffer.data(), kSubContentSize, kSubChildFlags, kSubWindowFlags);
+        // in ImGui, the zero size means that ImGui renders the child window by resizing automatically
+        if (0 != (int32_t)subContentWidth) 
         {
-            ImDrawList* childDrawList = ImGui::GetWindowDrawList();
+            ImGui::SameLine();
 
-            ImVec2 renderPivot = _mainContentPadding;
+            ImGui::SetNextWindowPos(kSubContentPos);
+            ImGui::SetNextWindowScroll(ImVec2{ 0.0f, scrollY }); // ** scrollY ** this is why we have to render the sub window here.
 
-            // Debug Code (Frame Size)
-            // ImGui::GetForegroundDrawList()->AddCircleFilled(breakPointFrameRectMin, 2.0f, IM_COL32_WHITE);
-            // ImGui::GetForegroundDrawList()->AddCircleFilled(breakPointFrameRectMax, 2.0f, IM_COL32_WHITE);
+            strBackIter = std::format_to(strBuffer.begin(), "{}##EditorSub", _windowTitle);
+            *strBackIter = '\0';
 
-            childDrawList->AddRectFilled(breakPointFrameRectMin, breakPointFrameRectMax, IM_COL32(51, 51, 51, 255));
-            
-            for (int32_t lineIdx = 0; lineIdx < kTotalLineNums; lineIdx++)
+            ImGui::BeginChild(strBuffer.data(), kSubContentSize, kSubChildFlags, kSubWindowFlags);
             {
-                /**
-                 * Break-Point
-                 */
-                ImGui::SetCursorPosX(renderPivot.x);
-                ImGui::SetCursorPosY(renderPivot.y - 2.0f); // give -2.0f for a visual beauty.
+                ImDrawList* childDrawList = ImGui::GetWindowDrawList();
 
-                // Debug Code (Break-Point Rect)
-                // ImGui::GetForegroundDrawList()->AddRect(ImGui::GetCursorScreenPos(), ImGui::GetCursorScreenPos() + ImVec2{ breakPointFrameSize.x, breakPointFrameSize.x }, IM_COL32_WHITE);
-                // ImGui::GetForegroundDrawList()->AddCircleFilled(ImGui::GetCursorScreenPos(), 2, IM_COL32_WHITE);
+                ImVec2 renderPivot = ImVec2{ 0.0f, _mainContentPadding.y + _textLineTopSpacing };
 
-                // Break-Point Pos
-                ImVec2 breakPointPos = ImGui::GetCursorScreenPos();
+                // Debug Code (Frame Size)
+                // ImGui::GetForegroundDrawList()->AddCircleFilled(breakPointFrameRectMin, 2.0f, IM_COL32_WHITE);
+                // ImGui::GetForegroundDrawList()->AddCircleFilled(breakPointFrameRectMax, 2.0f, IM_COL32_WHITE);
+
+                if (true == _showBreakPoints)
                 {
-                    breakPointPos.x += breakPointFrameSize.x * 0.5f;
-                    breakPointPos.y += breakPointFrameSize.x * 0.5f;
+                    childDrawList->AddRectFilled(breakPointFrameRectMin, breakPointFrameRectMax, IM_COL32(51, 51, 51, 255));
                 }
-
-                //
-                auto breakPointIter = _breakPoints.find(lineIdx);
-
-                strBackIter = std::format_to(strBuffer.begin(), "BreakPointBtn##{}", lineIdx);
-                *strBackIter = '\0';
-
-                // Break-Point Button
-                // if (ImGui::Button(std::format("##{}", lineIdx).c_str(), breakPointButtonSize))
-                if (ImGui::InvisibleButton(strBuffer.data(), breakPointButtonSize))
-                {
-                    if (_breakPoints.end() == breakPointIter)
-                    {
-                        _breakPoints.insert(lineIdx);
-                    }
-                    else
-                    {
-                        breakPointIter = _breakPoints.erase(breakPointIter);
-                    }
-                }
-
-                if (_breakPoints.end() != breakPointIter)
-                {
-                    childDrawList->AddCircleFilled(breakPointPos, breakPointFrameSize.x * 0.4f, IM_COL32(197, 81, 89, 255));
-                }
-
-                if (ImGui::IsItemHovered() && _breakPoints.end() == breakPointIter)
-                {
-                    childDrawList->AddCircleFilled(breakPointPos, breakPointFrameSize.x * 0.4f, IM_COL32(183, 183, 183, 255));
-                }
-
-                /**
-                 * Line Num
-                 */
-                const float kCurrLineNumWidth = _lineNums[lineIdx].size.x;
-
-                ImGui::SetCursorPosX(renderPivot.x + breakPointFrameSize.x + (kMaxLineNumWidth - kCurrLineNumWidth) + _lineNumLeftSpacing);
-                ImGui::SetCursorPosY(renderPivot.y - 1.0f);
-
-                ImVec2 lineNumPos = ImGui::GetCursorScreenPos();
                 
-                strBackIter = std::format_to(strBuffer.begin(), "{}", lineIdx + 1);
-                *strBackIter = '\0';
+                for (int32_t lineIdx = 0; lineIdx < kTotalLineNums; lineIdx++)
+                {
+                    /**
+                     * Break-Point
+                     */
+                    if (true == _showBreakPoints)
+                    {
+                        ImGui::SetCursorPosX(renderPivot.x);
+                        ImGui::SetCursorPosY(renderPivot.y - 2.0f); // give -2.0f for a visual beauty.
 
-                childDrawList->AddText(lineNumPos, IM_COL32_WHITE, strBuffer.data());
+                        // Debug Code (Break-Point Rect)
+                        // ImGui::GetForegroundDrawList()->AddRect(ImGui::GetCursorScreenPos(), ImGui::GetCursorScreenPos() + ImVec2{ breakPointFrameSize.x, breakPointFrameSize.x }, IM_COL32_WHITE);
+                        // ImGui::GetForegroundDrawList()->AddCircleFilled(ImGui::GetCursorScreenPos(), 2, IM_COL32_WHITE);
 
-                // Update
-                renderPivot.x = _mainContentPadding.x;
-                renderPivot.y += kFontHeight + _itemSpacingY;
+                        // Break-Point Pos
+                        ImVec2 breakPointPos = ImGui::GetCursorScreenPos();
+                        {
+                            breakPointPos.x += breakPointFrameSize.x * 0.5f;
+                            breakPointPos.y += breakPointFrameSize.x * 0.5f;
+                        }
+
+                        //
+                        auto breakPointIter = _breakPoints.find(lineIdx);
+
+                        strBackIter = std::format_to(strBuffer.begin(), "BreakPointBtn##{}", lineIdx);
+                        *strBackIter = '\0';
+
+                        // Break-Point Button
+                        if (ImGui::Button(std::format("##{}", lineIdx).c_str(), breakPointButtonSize))
+                        // if (ImGui::InvisibleButton(strBuffer.data(), breakPointButtonSize))
+                        {
+                            if (_breakPoints.end() == breakPointIter)
+                            {
+                                _breakPoints.insert(lineIdx);
+                            }
+                            else
+                            {
+                                breakPointIter = _breakPoints.erase(breakPointIter);
+                            }
+                        }
+
+                        if (_breakPoints.end() != breakPointIter)
+                        {
+                            childDrawList->AddCircleFilled(breakPointPos, breakPointFrameSize.x * 0.4f, IM_COL32(197, 81, 89, 255));
+                        }
+
+                        if (ImGui::IsItemHovered() && _breakPoints.end() == breakPointIter)
+                        {
+                            childDrawList->AddCircleFilled(breakPointPos, breakPointFrameSize.x * 0.4f, IM_COL32(183, 183, 183, 255));
+                        }
+                    }
+
+                    /**
+                     * Line Num
+                     */
+                    if (true == _showLineNums)
+                    {
+                        const float kCurrLineNumWidth = _lineNums[lineIdx].size.x;
+
+                        ImGui::SetCursorPosX(renderPivot.x + breakPointFrameSize.x + (kMaxLineNumWidth - kCurrLineNumWidth) + _lineNumLeftSpacing);
+                        ImGui::SetCursorPosY(renderPivot.y - 0.0f);
+
+                        ImVec2 lineNumPos = ImGui::GetCursorScreenPos();
+                
+                        strBackIter = std::format_to(strBuffer.begin(), "{}", lineIdx + 1);
+                        *strBackIter = '\0';
+
+                        childDrawList->AddText(lineNumPos, IM_COL32_WHITE, strBuffer.data());
+                    }
+
+                    // Update
+                    renderPivot.x = 0.0f;
+                    renderPivot.y += kFontHeight + _textLineTopSpacing + _textLineBottomSpacing;
+                }
+
+                // set margin of a break-point frame
+                ImVec2 marginBreakPointFrameMin = ImVec2{ breakPointFrameRectMin.x, breakPointFrameRectMax.y };
+                ImVec2 marginBreakPointFrameMax = ImVec2{ breakPointFrameRectMax.x, marginBreakPointFrameMin.y + style.ScrollbarSize };
+
+                // Debug Code
+                // ImGui::GetForegroundDrawList()->AddRect(marginBreakPointFrameMin, marginBreakPointFrameMax, IM_COL32(255, 0, 255, 255));
+
+                if (true == _showBreakPoints)
+                {
+                    parentDrawList->AddRectFilled(marginBreakPointFrameMin, marginBreakPointFrameMax, ImGui::GetColorU32(ImGuiCol_Button));
+                }
+
+                // TODO OR NOT
+                // // set margin of a line-num frame
+                // ImVec2 marginLineNumFrameMin = ImVec2{ marginBreakPointFrameMax.x, breakPointFrameRectMax.y };
+                // ImVec2 marginLineNumFrameMax = ImVec2{ marginLineNumFrameMin.x + kMaxLineNumWidth + _lineNumLeftSpacing + _lineNumRightSpacing, marginLineNumFrameMin.y + style.ScrollbarSize };
+                // 
+                // // Debug Code
+                // // ImGui::GetForegroundDrawList()->AddRect(marginLineNumFrameMin, marginLineNumFrameMax, IM_COL32(255, 0, 255, 255));
+                // 
+                // parentDrawList->AddRectFilled(marginLineNumFrameMin, marginLineNumFrameMax, ImGui::GetColorU32(ImGuiCol_ButtonHovered));
+
+                // dummy for scrolling
+                ImGui::Dummy(ImVec2{ 1.0f, 10000.0f });
             }
-
-            // set margin of a break-point frame
-            ImVec2 marginBreakPointFrameMin = ImVec2{ breakPointFrameRectMin.x, breakPointFrameRectMax.y };
-            ImVec2 marginBreakPointFrameMax = ImVec2{ breakPointFrameRectMax.x, marginBreakPointFrameMin.y + style.ScrollbarSize };
-
-            // Debug Code
-            // ImGui::GetForegroundDrawList()->AddRect(marginBreakPointFrameMin, marginBreakPointFrameMax, IM_COL32(255, 0, 255, 255));
-
-            parentDrawList->AddRectFilled(marginBreakPointFrameMin, marginBreakPointFrameMax, ImGui::GetColorU32(ImGuiCol_Button));
-
-            // TODO OR NOT
-            // // set margin of a line-num frame
-            // ImVec2 marginLineNumFrameMin = ImVec2{ marginBreakPointFrameMax.x, breakPointFrameRectMax.y };
-            // ImVec2 marginLineNumFrameMax = ImVec2{ marginLineNumFrameMin.x + kMaxLineNumWidth + _lineNumLeftSpacing + _lineNumRightSpacing, marginLineNumFrameMin.y + style.ScrollbarSize };
-            // 
-            // // Debug Code
-            // // ImGui::GetForegroundDrawList()->AddRect(marginLineNumFrameMin, marginLineNumFrameMax, IM_COL32(255, 0, 255, 255));
-            // 
-            // parentDrawList->AddRectFilled(marginLineNumFrameMin, marginLineNumFrameMax, ImGui::GetColorU32(ImGuiCol_ButtonHovered));
-
-            // dummy for scrolling
-            ImGui::Dummy(ImVec2{ 1.0f, 10000.0f });
+            ImGui::EndChild();
         }
-        ImGui::EndChild();
     }
-    ImGui::EndChild(); 
+    ImGui::EndChild();
+
+    ImGui::PopFont();
 }
 
-void TextEditor::renderFooter(float editorFrameWidth)
+void TextEditor::ChangeFont(ImFont* nextFont)
 {
-    constexpr ImGuiChildFlags  kChildFlags  = ImGuiChildFlags_FrameStyle | ImGuiChildFlags_AlwaysUseWindowPadding | ImGuiChildFlags_AutoResizeY;
-    constexpr ImGuiWindowFlags kWindowFlags = ImGuiWindowFlags_None;
+    _deferredUpdate_calcAllTextLineSizes = true;
+    _deferredUpdate_calcAllLineNumSizes  = true;
 
-    std::array<char, g_kShortBufferLen> strBuffer;
-
-    _footerSpacingY = 0.0f;
-
-    if (_renderFooterCallback)
-    {
-        auto backIter = std::format_to(strBuffer.begin(), "{}##Footer", _windowTitle);
-        *backIter = '\0';
-
-        ImGui::BeginChild(strBuffer.data(), ImVec2{ editorFrameWidth, 0.0f }, kChildFlags, kWindowFlags);
-        {
-            _renderFooterCallback(*this);
-
-            _footerSpacingY = ImGui::GetWindowSize().y + ImGui::GetStyle().ItemSpacing.y;
-        }
-        ImGui::EndChild();
-    }
+    _deferredUpdate_nextFont = nextFont;
 }
 
 void TextEditor::updateBeforeRender()
 {
+    if (nullptr != _deferredUpdate_nextFont)
+    {
+        _currFont = _deferredUpdate_nextFont;
+
+        _deferredUpdate_nextFont = nullptr;
+    }
+
+    if (nullptr == _currFont)
+    {
+        _currFont = ImGui::GetFont();
+    }
+
     if (true == _deferredUpdate_calcAllTextLineSizes)
     {
         _deferredUpdate_calcAllTextLineSizes = false;
@@ -495,7 +559,7 @@ void TextEditor::calcTextLineSize(int32_t lineIdx)
         _textBuffer.push_back(charInfo.ch);
     }
 
-    _textLines[lineIdx].size = ImGui::GetFont()->CalcTextSizeA(ImGui::GetFontSize(), FLT_MAX, 0.0f, _textBuffer.c_str());
+    _textLines[lineIdx].size = _currFont->CalcTextSizeA(_currFont->FontSize, FLT_MAX, 0.0f, _textBuffer.c_str());
 }
 
 void TextEditor::updateAdditionalLineNums()
@@ -524,7 +588,7 @@ void TextEditor::calcAllLineNumSizes()
 
 void TextEditor::calcLineNumSize(int32_t lineIdx)
 {
-    _lineNums[lineIdx].size = ImGui::GetFont()->CalcTextSizeA(ImGui::GetFontSize(), FLT_MAX, 0.0f, _lineNums[lineIdx].numStr.c_str());
+    _lineNums[lineIdx].size = _currFont->CalcTextSizeA(_currFont->FontSize, FLT_MAX, 0.0f, _lineNums[lineIdx].numStr.c_str());
 }
 
 auto TextEditor::getMaxTextLineWidth() const -> float
@@ -548,11 +612,6 @@ auto TextEditor::getMainContentRegionFullSize() const -> ImVec2
     contentRegionFullSize.x = maxTextLineWidth + (_mainContentPadding.x * 2.0f) + _textLineLeftSpacing + _textLineRightSpacing;
     contentRegionFullSize.y = _textLines.size() * _lineHeight + (_mainContentPadding.y * 2.0f);
 
-    if (_textLines.size() > 0)
-    {
-        contentRegionFullSize.y -= _itemSpacingY;
-    }
-
     return contentRegionFullSize;
 }
 
@@ -560,7 +619,7 @@ auto TextEditor::getMaxLineNumWidth() const -> float
 {
     std::string_view maxLineNumStr = _lineNums.back().numStr;
 
-    float maxLineNumWidth = ImGui::GetFont()->CalcTextSizeA(ImGui::GetFontSize(), FLT_MAX, 0.0f, maxLineNumStr.data()).x;
+    float maxLineNumWidth = _currFont->CalcTextSizeA(_currFont->FontSize, FLT_MAX, 0.0f, maxLineNumStr.data()).x;
 
     return maxLineNumWidth;
 }

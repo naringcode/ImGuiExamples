@@ -8,6 +8,7 @@
 #include <SDL2/SDL.h>
 
 // imgui
+#define IMGUI_DEFINE_MATH_OPERATORS
 #include <imgui.h>
 #include <implot.h>
 #include <imgui_impl_sdl2.h>
@@ -145,33 +146,173 @@ int main(int argc, char* argv[])
     if (false == Init())
         return -1;
 
+    ImGuiIO& io = ImGui::GetIO();
+
+    ImFontConfig fontConfig;
+    {
+        fontConfig.OversampleH = 2;
+        fontConfig.OversampleV = 1;
+    }
+
+    ImFont* defaultFont  = io.Fonts->AddFontDefault(&fontConfig);
+    ImFont* consolasFont = io.Fonts->AddFontFromFileTTF("C:/Windows/Fonts/Consola.ttf", 16, &fontConfig);
+
+    ImFont* currentFont = defaultFont;
+
     TextEditor textEditor;
     bool isTextEditorOpened = true;
 
     textEditor.SetWindowFlags(ImGuiWindowFlags_MenuBar);
 
-    textEditor.SetRenderMenuCallback([](TextEditor& textEditor) {
+    textEditor.SetRenderMenuCallback([&](TextEditor& textEditor) {
         if (ImGui::BeginMenuBar())
         {
-            if (ImGui::BeginMenu("Menu"))
+            if (ImGui::BeginMenu("Options"))
             {
-                ImGui::MenuItem("First");
-                ImGui::MenuItem("Second");
-                ImGui::MenuItem("Third");
+                if (textEditor.GetShowBreakPoints())
+                {
+                    if (ImGui::MenuItem("Off Breakpoints"))
+                    {
+                        textEditor.SetShowBreakPoints(false);
+                    }
+                }
+                else
+                {
+                    if (ImGui::MenuItem("On Breakpoints"))
+                    {
+                        textEditor.SetShowBreakPoints(true);
+                    }
+                }
+
+                if (textEditor.GetShowLineNums())
+                {
+                    if (ImGui::MenuItem("Off Line Nums"))
+                    {
+                        textEditor.SetShowLineNums(false);
+                    }
+                }
+                else
+                {
+                    if (ImGui::MenuItem("On Line Nums"))
+                    {
+                        textEditor.SetShowLineNums(true);
+                    }
+                }
+
+                if (textEditor.GetShowLineMarkers())
+                {
+                    if (ImGui::MenuItem("Off Line Markers"))
+                    {
+                        textEditor.SetShowLineMarkers(false);
+                    }
+                }
+                else
+                {
+                    if (ImGui::MenuItem("On Line Markers"))
+                    {
+                        textEditor.SetShowLineMarkers(true);
+                    }
+                }
+
+                if (textEditor.GetShowWindowResizeGrip())
+                {
+                    if (ImGui::MenuItem("Off Window Resize Grip"))
+                    {
+                        textEditor.SetShowWindowResizeGrip(false);
+                    }
+                }
+                else
+                {
+                    if (ImGui::MenuItem("On Window Resize Grip"))
+                    {
+                        textEditor.SetShowWindowResizeGrip(true);
+                    }
+                }
     
                 ImGui::EndMenu();
             }
     
+            if (ImGui::BeginMenu("Fonts"))
+            {
+                if (ImGui::MenuItem("Default"))
+                {
+                    currentFont = defaultFont;
+
+                    textEditor.ChangeFont(currentFont);
+                }
+
+                if (ImGui::MenuItem("Consolas"))
+                {
+                    currentFont = consolasFont;
+
+                    textEditor.ChangeFont(currentFont);
+                }
+
+                ImGui::EndMenu();
+            }
+
             ImGui::EndMenuBar();
         }
     });
     
     textEditor.SetRenderHeaderCallback([](TextEditor& textEditor) {
-        ImGui::Text("Header | Lines : %d", textEditor.GetTotalLines());
+        static bool s_ShowUIButtons = true;
+
+        if (true == s_ShowUIButtons && ImGui::Button("Header | Hide UI Buttons"))
+        {
+            s_ShowUIButtons = false;
+        }
+        else if (false == s_ShowUIButtons && ImGui::Button("Header | Show UI Buttons"))
+        {
+            s_ShowUIButtons = true;
+        }
+
+        if (true == s_ShowUIButtons)
+        {
+            int32_t mainContentPaddingX = (int32_t)textEditor.GetMainContentPaddingX();
+            ImGui::SliderInt("##MainContentPaddingX", &mainContentPaddingX, 0, 24, "MainContentPaddingX : %d");
+            textEditor.SetMainContentPaddingX((float)mainContentPaddingX);
+
+            ImGui::SameLine();
+
+            int32_t mainContentPaddingY = (int32_t)textEditor.GetMainContentPaddingY();
+            ImGui::SliderInt("##MainContentPaddingY", &mainContentPaddingY, 0, 24, "MainContentPaddingY : %d");
+            textEditor.SetMainContentPaddingY((float)mainContentPaddingY);
+
+            int32_t lineNumLeftSpacing = (int32_t)textEditor.GetLineNumLeftSpacing();
+            ImGui::SliderInt("##LineNumLeftSpacing", &lineNumLeftSpacing, 0, 24, "LineNumLeftSpacing : %d");
+            textEditor.SetLineNumLeftSpacing((float)lineNumLeftSpacing);
+
+            ImGui::SameLine();
+
+            int32_t lineNumRightSpacing = (int32_t)textEditor.GetLineNumRightSpacing();
+            ImGui::SliderInt("##LineNumRightSpacing", &lineNumRightSpacing, 0, 24, "LineNumRightSpacing : %d");
+            textEditor.SetLineNumRightSpacing((float)lineNumRightSpacing);
+
+            int32_t textLineTopSpacing = (int32_t)textEditor.GetTextLineTopSpacing();
+            ImGui::SliderInt("##TextLineTopSpacing", &textLineTopSpacing, 0, 24, "TextLineTopSpacing : %d");
+            textEditor.SetTextLineTopSpacing((float)textLineTopSpacing);
+
+            ImGui::SameLine();
+
+            int32_t textLineBottomSpacing = (int32_t)textEditor.GetTextLineBottomSpacing();
+            ImGui::SliderInt("##TextLineBottomSpacing", &textLineBottomSpacing, 0, 24, "TextLineBottomSpacing : %d");
+            textEditor.SetTextLineBottomSpacing((float)textLineBottomSpacing);
+
+            int32_t textLineLeftSpacing = (int32_t)textEditor.GetTextLineLeftSpacing();
+            ImGui::SliderInt("##TextLineLeftSpacing", &textLineLeftSpacing, 0, 24, "TextLineLeftSpacing : %d");
+            textEditor.SetTextLineLeftSpacing((float)textLineLeftSpacing);
+
+            ImGui::SameLine();
+
+            int32_t textLineRightSpacing = (int32_t)textEditor.GetTextLineRightSpacing();
+            ImGui::SliderInt("##TextLineRightSpacing", &textLineRightSpacing, 0, 200, "TextLineRightSpacing : %d");
+            textEditor.SetTextLineRightSpacing((float)textLineRightSpacing);
+        }
     });
 
     textEditor.SetRenderFooterCallback([](TextEditor& textEditor) {
-        ImGui::Text("Footer | Lang : C++");
+        ImGui::Text("Footer | Lang : C++ | Lines : %d", textEditor.GetTotalLines());
     });
 
     // Set Text
@@ -203,27 +344,27 @@ int main(int argc, char* argv[])
             {
                 isTextEditorOpened = false;
             }
-
+        
             ImGui::EndMainMenuBar();
         }
 
         textEditor.SetNextWindowSize(ImVec2{ 800.0f, 600.0f }, ImGuiCond_FirstUseEver);
         textEditor.RenderWindow(&isTextEditorOpened);
-
+        
         ImGui::SetNextWindowSize(ImVec2{ 800.0f, 600.0f }, ImGuiCond_FirstUseEver);
         ImGui::Begin("Test Window", nullptr);
         ImGui::Text("AAABBBCCC");
         ImGui::Text("AAABBBCCC");
         //textEditor.RenderChildWindow(ImVec2{ 0.0f, 200.0f });
-
+        
         ImGui::Text("AAABBBCCC");
-
+        
         textEditor.SetWindowTitle("Child Window##1");
         textEditor.RenderChildWindow(ImVec2{ 300.0f, 200.0f });
         ImGui::SameLine();
         textEditor.SetWindowTitle("Child Window##2");
-        textEditor.RenderChildWindow(ImVec2{ 300.0f, 200.0f });
-
+        textEditor.RenderChildWindow(ImVec2{ 0.0f, 200.0f });
+        
         ImGui::Text("AAABBBCCC");
         ImGui::Text("AAABBBCCC");
         ImGui::End();

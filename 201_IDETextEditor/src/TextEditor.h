@@ -73,9 +73,13 @@ public:
     };
 
 public:
-    TextEditor()
+    TextEditor(ImFont* font = nullptr)
     {
         _textLines.push_back(TextLine{ }); // empty text
+
+        // GetFont() should be called after ImGui::NewFrame()
+        // _currFont = nullptr != font ? font : ImGui::GetFont();
+        _currFont = font;
     }
 
     ~TextEditor() = default;
@@ -86,10 +90,12 @@ public:
     TextEditor& operator=(const TextEditor& rhs) = delete;
     TextEditor& operator=(TextEditor&& rhs) noexcept = delete;
 
-
 public:
     void RenderWindow(bool* open = nullptr);
     void RenderChildWindow(ImVec2 editorFrameSize = ImVec2{ 0.0f, 0.0f });
+
+public:
+    void ChangeFont(ImFont* nextFont);
 
 private:
     void handleKeyboardInputs();
@@ -97,8 +103,8 @@ private:
 
     void renderMenu();
     void renderHeader(float editorFrameWidth);
-    void renderEditor(ImVec2 editorFrameSize);
     void renderFooter(float editorFrameWidth);
+    void renderEditor(ImVec2 editorFrameSize);
 
 private:
     void beginStyle()
@@ -231,6 +237,126 @@ public:
         return (int)_textLines.size();
     }
 
+    auto GetMainContentPaddingX() const -> float
+    {
+        return _mainContentPadding.x;
+    }
+
+    void SetMainContentPaddingX(float mainContentPaddingX)
+    {
+        _mainContentPadding.x = mainContentPaddingX;
+    }
+
+    auto GetMainContentPaddingY() const -> float
+    {
+        return _mainContentPadding.y;
+    }
+
+    void SetMainContentPaddingY(float mainContentPaddingY)
+    {
+        _mainContentPadding.y = mainContentPaddingY;
+    }
+
+    auto GetLineNumLeftSpacing() const -> float
+    {
+        return _lineNumLeftSpacing;
+    }
+
+    void SetLineNumLeftSpacing(float lineNumLeftSpacing)
+    {
+        _lineNumLeftSpacing = lineNumLeftSpacing;
+    }
+
+    auto GetLineNumRightSpacing() const -> float
+    {
+        return _lineNumRightSpacing;
+    }
+
+    void SetLineNumRightSpacing(float lineNumRightSpacing)
+    {
+        _lineNumRightSpacing = lineNumRightSpacing;
+    }
+
+    auto GetTextLineTopSpacing() const -> float
+    {
+        return _textLineTopSpacing;
+    }
+
+    void SetTextLineTopSpacing(float textLineTopSpacing)
+    {
+        _textLineTopSpacing = textLineTopSpacing;
+    }
+
+    auto GetTextLineBottomSpacing() const -> float
+    {
+        return _textLineBottomSpacing;
+    }
+
+    void SetTextLineBottomSpacing(float textLineBottomSpacing)
+    {
+        _textLineBottomSpacing = textLineBottomSpacing;
+    }
+
+    auto GetTextLineLeftSpacing() const -> float
+    {
+        return _textLineLeftSpacing;
+    }
+
+    void SetTextLineLeftSpacing(float textLineLeftSpacing)
+    {
+        _textLineLeftSpacing = textLineLeftSpacing;
+    }
+
+    auto GetTextLineRightSpacing() const -> float
+    {
+        return _textLineRightSpacing;
+    }
+
+    void SetTextLineRightSpacing(float textLineRightSpacing)
+    {
+        _textLineRightSpacing = textLineRightSpacing;
+    }
+
+    auto GetShowBreakPoints() const -> bool
+    {
+        return _showBreakPoints;
+    }
+
+    void SetShowBreakPoints(bool enabled)
+    {
+        _showBreakPoints = enabled;
+    }
+
+    auto GetShowLineNums() const -> bool
+    {
+        return _showLineNums;
+    }
+
+    void SetShowLineNums(bool enabled)
+    {
+        _showLineNums = enabled;
+    }
+
+    auto GetShowLineMarkers() const -> bool
+    {
+        return _showLineMarkers;
+    }
+
+    void SetShowLineMarkers(bool enabled)
+    {
+        _showLineMarkers = enabled;
+    }
+
+    auto GetShowWindowResizeGrip() const -> bool
+    {
+        return _showWindowResizeGrip;
+    }
+
+    void SetShowWindowResizeGrip(bool enabled)
+    {
+        _showWindowResizeGrip = enabled;
+    }
+
 private:
     uint32_t    _windowFlags = ImGuiWindowFlags_None; // | ImGuiWindowFlags_MenuBar;
     std::string _windowTitle = "Text Editor Window";
@@ -257,19 +383,31 @@ private:
 
     std::vector<int32_t> _deferredUpdate_additionalLineNumIndices;
 
+    ImFont* _deferredUpdate_nextFont = nullptr;
+
     /**
-     * Rendering Info
+     * Editor Rendering Info
      */
+    ImFont* _currFont = nullptr;
+
     ImVec2 _mainContentPadding = ImVec2{ 0.0f, 4.0f };
-    float  _itemSpacingY = 3.0f;
 
     float _lineNumLeftSpacing  = 12.0f;
     float _lineNumRightSpacing = 4.0f;
 
+    float _textLineTopSpacing    = 2.0f;
+    float _textLineBottomSpacing = 2.0f;
+
     float _textLineLeftSpacing  = 8.0f;
     float _textLineRightSpacing = 100.0f;
 
-    float _lineHeight = 1.0f;
+    float _lineHeight = 1.0f; // automatically calculated internally
+
+    bool _showBreakPoints = true;
+    bool _showLineNums    = true;
+    bool _showLineMarkers = true;
+
+    bool _showWindowResizeGrip = false;
 
     // the length of text line cannot be defined at a compile time.
     std::string _textBuffer = "";
