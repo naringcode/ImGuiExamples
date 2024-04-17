@@ -145,6 +145,16 @@ int main(int argc, char* argv[])
     
     ImFont* defaultFont = io.Fonts->AddFontDefault();
 
+    // combine fonts (https://github.com/ocornut/imgui/blob/master/docs/FONTS.md | Combine multiple fonts into one)
+    ImFontConfig fontConfig;
+    strcpy_s(fontConfig.Name, "Combined(Consolas + NanumGothic), 12pt");
+
+    ImFont* combinedFont = io.Fonts->AddFontFromFileTTF("C:/Windows/Fonts/Consola.ttf", 12, &fontConfig);
+    fontConfig.MergeMode = true; // MergeMode를 true로 하는 순간 AddFontXXX() 계열을 호출할 때마다 fontConfig에 결합됨.
+    
+    io.Fonts->AddFontFromFileTTF("C:/Windows/Fonts/NanumGothic.ttf", 12, &fontConfig, io.Fonts->GetGlyphRangesKorean()); // merge into the combinedFont
+    io.Fonts->Build();
+
     ImGui::StyleColorsDark();
 
     // Setup Platform/Renderer backends
