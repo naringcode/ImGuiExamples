@@ -20,7 +20,8 @@
 #include <functional>
 
 #define IMGUI_DEFINE_MATH_OPERATORS
-#include "imgui.h"
+#include <imgui.h>
+#include <imgui_internal.h>
 
 class TextEditor
 {
@@ -34,14 +35,16 @@ public:
     {
         std::vector<CharInfo> text; // without '\0'
 
-        ImVec2 size; // text line size
+        std::vector<float> cumulativeCharWidths; // helpful for finding a column
+
+        float width; // text line width
     };
 
     struct LineNumber
     {
         std::string numStr;
 
-        ImVec2 size;
+        float width;
     };
 
     // using TextLine = std::vector<CharInfo>;
@@ -60,16 +63,26 @@ public:
 
     struct LineCoordinate
     {
-        int32_t lineNo;
+        /**
+         * column
+         * 0  1  2  3  4  5(** consider out of bounds **)
+         * ⊿  ⊿  ⊿  ⊿  ⊿  ⊿
+         * 忙式式成式式成式式成式式成式式忖 lineNum
+         * 弛00弛01弛02弛03弛04弛 ∠ 0
+         * 戍式式托式式托式式托式式托式式扣
+         * 弛10弛11弛12弛13弛14弛 ∠ 1
+         * 戍式式托式式托式式托式式托式式扣
+         * 弛20弛21弛22弛23弛24弛 ∠ 2
+         * 戌式式扛式式扛式式扛式式扛式式戎
+         */
+        int32_t lineNum;
         int32_t column;
     };
 
-    struct LineSelection
+    struct TextSelection
     {
         LineCoordinate start;
         LineCoordinate end;
-
-        LineCoordinate cursor;
     };
 
 public:
@@ -98,15 +111,69 @@ public:
     void ChangeFont(ImFont* nextFont);
 
 private:
-    void handleKeyboardInputs();
-    void handleMouseInputs();
+    void updateBeforeRender();
+    void updateAfterRender();
 
     void renderMenu();
     void renderHeader(float editorFrameWidth);
     void renderFooter(float editorFrameWidth);
     void renderEditor(ImVec2 editorFrameSize);
+    
+private:
+    void handleMainEditorInputs();
+
+    void handleMainEditorKeyboardInputs();
+    void handleMainEditorMouseInputs();
+
+    /**
+     * Coordinate
+     */
+    auto adjustCoordinate(const LineCoordinate& lineCoord) const -> LineCoordinate;
+
+    auto getLineCoordinateScreenStartPos() const -> ImVec2;
+
+    auto isValidCoordinate(const LineCoordinate& lineCoord) const -> bool;
+
+    /**
+     * Mouse
+     */
+    // check the mouse pos in the main editor frame except scrollbar frame
+    auto isMousePosInMainEditorFrame() const -> bool;
+
+    /**
+     * Converting
+     */
+    auto convertLineCoordinateToScreenPos(const LineCoordinate& lineCoord) const -> ImVec2;
+    auto convertMousePosToLineCoordinate(const ImVec2& mousePos) const -> LineCoordinate;
 
 private:
+    /**
+     * Text Line
+     */
+    void calcAllTextLineSizes();
+    void calcTextLineSize(int32_t lineIdx);
+
+    void updateAdditionalLineNums();
+
+    void calcAllLineNumSizes(); // call when we change a font type
+    void calcLineNumSize(int32_t lineNum);
+
+    // TODO : how to colorize comments?
+    // void colorizeAllTextLines();
+    // void colorizeTextLine(int32_t lineIdx);
+
+    auto getMaxTextLineWidth() const -> float;
+    auto getMainContentRegionFullSize() const -> ImVec2;
+
+    auto getMaxLineNumWidth() const -> float;
+
+    // TODO : UTF8 SUPPORT
+    // auto getUtf8CharByteLength() const -> int32_t
+
+private:
+    /**
+     * Style
+     */
     void beginStyle()
     {
         _styleVarStackList.emplace_back();
@@ -174,27 +241,9 @@ private:
     }
 
 public:
-    void updateBeforeRender();
-    void updateAfterRender();
-
-    void calcAllTextLineSizes();
-    void calcTextLineSize(int32_t lineIdx);
-
-    void updateAdditionalLineNums();
-
-    void calcAllLineNumSizes(); // call when we change a font type
-    void calcLineNumSize(int32_t lineNum);
-
-    // TODO : how to colorize comments?
-    // void colorizeAllTextLines();
-    // void colorizeTextLine(int32_t lineIdx);
-
-    auto getMaxTextLineWidth() const -> float;
-    auto getMainContentRegionFullSize() const -> ImVec2;
-
-    auto getMaxLineNumWidth() const -> float;
-
-public:
+    /**
+     * Public Getters & Setters
+     */
     void SetWindowFlags(ImGuiWindowFlags windowFlags /* = ImGuiWindowFlags_None*/)
     {
         _windowFlags = windowFlags; // | ImGuiWindowFlags_MenuBar;
@@ -358,6 +407,9 @@ public:
     }
 
 private:
+    /**
+     * Core
+     */
     uint32_t    _windowFlags = ImGuiWindowFlags_None; // | ImGuiWindowFlags_MenuBar;
     std::string _windowTitle = "Text Editor Window";
 
@@ -368,12 +420,13 @@ private:
     std::vector<std::vector<StyleVarItem>>   _styleVarStackList;
     std::vector<std::vector<StyleColorItem>> _styleColStackList;
 
-    std::vector<TextLine>   _textLines;
+    std::vector<TextLine>   _textLines; // _textLines must have one line at least
     std::vector<LineNumber> _lineNums;
 
     std::unordered_set<int32_t> _breakPoints; // TODO : thread safe
 
-    float _footerSpacingY = 0.0f; // to calculate the height of contents body
+    // the length of text line cannot be defined at a compile time.
+    std::string _textBuffer = "";
 
     /**
      * Update
@@ -384,6 +437,20 @@ private:
     std::vector<int32_t> _deferredUpdate_additionalLineNumIndices;
 
     ImFont* _deferredUpdate_nextFont = nullptr;
+
+    double _currMainTime = 0.0f; // internal value by ImGui::GetTime()
+
+    /**
+     * Inputs
+     */
+    static constexpr int32_t _kTabSize = 4;
+
+    bool _handleEditorKeyboardInputs = true;
+    bool _handleEditorMouseInputs    = true;
+
+    double _lastLeftButtonClickedTime = -1.0;
+
+    LineCoordinate _cursorCoord = { 0, 0 };
 
     /**
      * Editor Rendering Info
@@ -409,6 +476,5 @@ private:
 
     bool _showWindowResizeGrip = false;
 
-    // the length of text line cannot be defined at a compile time.
-    std::string _textBuffer = "";
+    float _footerSpacingY = 0.0f; // to calculate the height of contents body(internal use)
 };

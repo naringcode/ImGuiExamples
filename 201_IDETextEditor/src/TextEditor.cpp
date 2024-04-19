@@ -1,6 +1,6 @@
 #include "TextEditor.h"
 
-// #include <iostream>
+#include <iostream>
 
 #include <format>
 
@@ -9,6 +9,16 @@
 // #define SHOW_BREAKPOINT_FRAME_RECT
 #define SHOW_BREAKPOINT_BUTTON_RECT
 // #define SHOW_BREAKPOINT_FRAME_MARGIN_RECT
+#define SHOW_MAIN_EDITOR_FRAME_RECT_WHEN_HOVERED
+#define SHOW_START_POS_OF_LINE_COORDINATE_WHEN_HOVERED
+
+#ifdef max
+#undef max
+#endif
+
+#ifdef min
+#undef min
+#endif
 
 constexpr int32_t g_kShortBufferLen = 256;
 
@@ -126,6 +136,55 @@ void TextEditor::RenderChildWindow(ImVec2 editorFrameSize)
     this->updateAfterRender();
 }
 
+void TextEditor::ChangeFont(ImFont* nextFont)
+{
+    _deferredUpdate_calcAllTextLineSizes = true;
+    _deferredUpdate_calcAllLineNumSizes = true;
+
+    _deferredUpdate_nextFont = nextFont;
+}
+
+void TextEditor::updateBeforeRender()
+{
+    /**
+     * Update
+     */
+    if (nullptr != _deferredUpdate_nextFont)
+    {
+        _currFont = _deferredUpdate_nextFont;
+
+        _deferredUpdate_nextFont = nullptr;
+    }
+
+    if (nullptr == _currFont)
+    {
+        _currFont = ImGui::GetFont();
+
+
+    }
+
+    if (true == _deferredUpdate_calcAllTextLineSizes)
+    {
+        _deferredUpdate_calcAllTextLineSizes = false;
+
+        this->calcAllTextLineSizes();
+    }
+
+    if (true == _deferredUpdate_calcAllLineNumSizes)
+    {
+        _deferredUpdate_calcAllLineNumSizes = false;
+
+        this->calcAllLineNumSizes();
+    }
+
+    this->updateAdditionalLineNums();
+}
+
+void TextEditor::updateAfterRender()
+{
+
+}
+
 void TextEditor::renderMenu()
 {
     if (_renderMenuCallback && 0 != (_windowFlags & ImGuiWindowFlags_MenuBar))
@@ -213,13 +272,13 @@ void TextEditor::renderEditor(ImVec2 editorFrameSize)
      * Core Variables
      */
     constexpr ImGuiChildFlags  kFrameChildFlags  = ImGuiChildFlags_Border;
-    constexpr ImGuiWindowFlags kFrameWindowFlags = ImGuiWindowFlags_None;
+    constexpr ImGuiWindowFlags kFrameWindowFlags = ImGuiWindowFlags_None | ImGuiWindowFlags_NoMove;
     
     constexpr ImGuiChildFlags  kSubChildFlags  = ImGuiChildFlags_None;
-    constexpr ImGuiWindowFlags kSubWindowFlags = ImGuiWindowFlags_NoScrollbar;
+    constexpr ImGuiWindowFlags kSubWindowFlags = ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoMove;
 
     constexpr ImGuiChildFlags  kMainChildFlags  = ImGuiChildFlags_None;
-    constexpr ImGuiWindowFlags kMainWindowFlags = ImGuiWindowFlags_AlwaysHorizontalScrollbar;
+    constexpr ImGuiWindowFlags kMainWindowFlags = ImGuiWindowFlags_AlwaysHorizontalScrollbar | ImGuiWindowFlags_NoMove;
 
     ImGuiStyle& style          = ImGui::GetStyle();
     ImDrawList* parentDrawList = ImGui::GetWindowDrawList();
@@ -232,6 +291,7 @@ void TextEditor::renderEditor(ImVec2 editorFrameSize)
     auto strBackIter = std::format_to(strBuffer.begin(), "{}##EditorFrame", _windowTitle);
     *strBackIter = '\0';
 
+    // TODO OR NOT : ChildWindow To Group(in order to capture io events simply)
     ImGui::BeginChild(strBuffer.data(), kFrameSize, kFrameChildFlags, kFrameWindowFlags);
     {
         /**
@@ -309,6 +369,9 @@ void TextEditor::renderEditor(ImVec2 editorFrameSize)
         
         ImGui::BeginChild(strBuffer.data(), kMainContentSize, kMainChildFlags, kMainWindowFlags);
         {
+            this->handleMainEditorInputs();
+
+            //
             ImDrawList* childDrawList = ImGui::GetWindowDrawList();
             
             scrollX = ImGui::GetScrollX();
@@ -344,10 +407,10 @@ void TextEditor::renderEditor(ImVec2 editorFrameSize)
                 // Line Markers
                 if (true == _showLineMarkers)
                 {
-                    auto sp = ImVec2{ ImGui::GetCursorScreenPos().x + scrollX, ImGui::GetCursorScreenPos().y };
-                    auto ep = ImVec2{ sp.x, sp.y + kFontHeight };
+                    auto startPos = ImVec2{ ImGui::GetCursorScreenPos().x + scrollX, ImGui::GetCursorScreenPos().y };
+                    auto endPos   = ImVec2{ startPos.x, startPos.y + kFontHeight };
 
-                    childDrawList->AddLine(sp, ep, IM_COL32(165, 165, 165, 255));
+                    childDrawList->AddLine(startPos, endPos, IM_COL32(165, 165, 165, 255));
                 }
 
                 /**
@@ -374,6 +437,24 @@ void TextEditor::renderEditor(ImVec2 editorFrameSize)
                 renderPivot.y += _lineHeight;
             }
 
+            /**
+             * Cursor
+             */
+            if (_cursorCoord.lineNum >= minLineIdx && _cursorCoord.lineNum <= maxLineIdx)
+            {
+                // constexpr float kCursorWidth = 1.0f;
+
+                bool focused = ImGui::IsWindowFocused();
+
+                if (focused)
+                {
+                    ImVec2 startPos = this->convertLineCoordinateToScreenPos(_cursorCoord);
+                    ImVec2 endPos   = startPos + ImVec2{ 0.0f, _lineHeight };
+
+                    childDrawList->AddLine(startPos, endPos, IM_COL32(220, 220, 220, 255));
+                }
+            }
+
             // get the full size of the main editor for scrolling
             ImVec2 editorContentRegion = this->getMainContentRegionFullSize();
             {
@@ -383,7 +464,7 @@ void TextEditor::renderEditor(ImVec2 editorFrameSize)
 
             ImGui::SetCursorPos(editorContentRegion);
         }
-        ImGui::EndChild();
+        ImGui::EndChild(); // End of EditorMain
         
         /**
          * Sub Content (Breakpoint, Line Num)
@@ -481,7 +562,7 @@ void TextEditor::renderEditor(ImVec2 editorFrameSize)
                      */
                     if (true == _showLineNums)
                     {
-                        const float kCurrLineNumWidth = _lineNums[lineIdx].size.x;
+                        const float kCurrLineNumWidth = _lineNums[lineIdx].width;
 
                         ImGui::SetCursorPosX(renderPivot.x + breakPointFrameSize.x + (kMaxLineNumWidth - kCurrLineNumWidth) + _lineNumLeftSpacing);
                         ImGui::SetCursorPosY(renderPivot.y - 0.0f);
@@ -525,56 +606,252 @@ void TextEditor::renderEditor(ImVec2 editorFrameSize)
                 // dummy for scrolling
                 ImGui::Dummy(ImVec2{ 1.0f, 10000.0f });
             }
-            ImGui::EndChild();
+            ImGui::EndChild(); // End of EditorSub
         }
     }
-    ImGui::EndChild();
+    ImGui::EndChild(); // End of EditorFrame
 
     ImGui::PopFont();
 }
 
-void TextEditor::ChangeFont(ImFont* nextFont)
+void TextEditor::handleMainEditorInputs()
 {
-    _deferredUpdate_calcAllTextLineSizes = true;
-    _deferredUpdate_calcAllLineNumSizes  = true;
+    _currMainTime = ImGui::GetTime();
 
-    _deferredUpdate_nextFont = nextFont;
+    if (_handleEditorKeyboardInputs)
+    {
+        this->handleMainEditorKeyboardInputs();
+    }
+
+    if (_handleEditorMouseInputs)
+    {
+        this->handleMainEditorMouseInputs();
+    }
 }
 
-void TextEditor::updateBeforeRender()
+void TextEditor::handleMainEditorKeyboardInputs()
 {
-    if (nullptr != _deferredUpdate_nextFont)
-    {
-        _currFont = _deferredUpdate_nextFont;
+    ImGuiIO& io = ImGui::GetIO();
 
-        _deferredUpdate_nextFont = nullptr;
-    }
-
-    if (nullptr == _currFont)
-    {
-        _currFont = ImGui::GetFont();
-    }
-
-    if (true == _deferredUpdate_calcAllTextLineSizes)
-    {
-        _deferredUpdate_calcAllTextLineSizes = false;
-
-        this->calcAllTextLineSizes();
-    }
-
-    if (true == _deferredUpdate_calcAllLineNumSizes)
-    {
-        _deferredUpdate_calcAllLineNumSizes = false;
-
-        this->calcAllLineNumSizes();
-    }
-
-    this->updateAdditionalLineNums();
+    bool shiftPressed = io.KeyShift;
+    bool ctrlPressed  = io.KeyCtrl;
+    bool altPressed   = io.KeyAlt;
 }
 
-void TextEditor::updateAfterRender()
+void TextEditor::handleMainEditorMouseInputs()
 {
+    ImGuiIO& io = ImGui::GetIO();
+    
+    LineCoordinate lineCoordinate = this->convertMousePosToLineCoordinate(ImGui::GetMousePos());
 
+    bool shiftPressed = io.KeyShift;
+    bool ctrlPressed  = io.KeyCtrl;
+    bool altPressed   = io.KeyAlt;
+
+    // if (isDragging())
+
+    if (ImGui::IsWindowHovered())
+    // if (ImGui::IsWindowFocused())
+    {
+        bool leftButtonClicked       = ImGui::IsMouseClicked(ImGuiMouseButton_Left);
+        bool leftButtonDoubleClicked = ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left);
+        bool leftButtonTripleClicked = false;
+
+        if (this->isMousePosInMainEditorFrame() /* && !(is in selection) */)
+        {
+            ImGui::SetMouseCursor(ImGuiMouseCursor_TextInput);
+        }
+
+        // triple click possibility
+        if (leftButtonClicked && false == leftButtonDoubleClicked && -1.0 != _lastLeftButtonClickedTime)
+        {
+            if (_currMainTime - _lastLeftButtonClickedTime < io.MouseDoubleClickTime)
+            {
+                leftButtonTripleClicked = true;
+            }
+        }
+
+        /**
+         * Main Logic
+         */
+        if (leftButtonTripleClicked)
+        {
+            _cursorCoord = lineCoordinate;
+
+            // if (false == ctrlPressed) // line selection
+            // {
+            // 
+            // }
+
+            _lastLeftButtonClickedTime = -1.0;
+
+            return;
+        }
+        else if (leftButtonDoubleClicked)
+        {
+            _cursorCoord = lineCoordinate;
+
+            // if (false == ctrlPressed) // 
+            // {
+            // 
+            // }
+
+            _lastLeftButtonClickedTime = _currMainTime;
+
+            return;
+        }
+        else if (leftButtonClicked)
+        {
+            _cursorCoord = lineCoordinate;
+
+            // if (ctrlPressed) // word selection
+            // {
+            // 
+            // }
+            // else // none selection(cursor only)
+            // {
+            // 
+            // }
+
+            _lastLeftButtonClickedTime = _currMainTime;
+
+            return;
+        }
+
+        // dragging by the left button
+        if (ImGui::IsMouseDragging(ImGuiMouseButton_Left) && ImGui::IsMouseDown(ImGuiMouseButton_Left))
+        {
+            _cursorCoord = lineCoordinate;
+
+        }
+    }
+}
+
+auto TextEditor::adjustCoordinate(const LineCoordinate& lineCoord) const -> LineCoordinate
+{
+    LineCoordinate ret;
+
+    ret.lineNum = std::max(0, lineCoord.lineNum);
+    ret.lineNum = std::min(ret.lineNum, (int32_t)_textLines.size() - 1);
+
+    ret.column  = std::max(0, lineCoord.column);
+
+    if (_textLines[ret.column].text.empty())
+    {
+        ret.column = 0;
+    }
+    else
+    {
+        ret.column = std::min(ret.column, (int32_t)_textLines[ret.lineNum].text.size() /* - 1 */);
+    }
+
+    return ret;
+}
+
+auto TextEditor::getLineCoordinateScreenStartPos() const -> ImVec2
+{
+    // ImVec2 screenStartPos = ImGui::GetCursorScreenPos() + _mainContentPadding + ImVec2{ _textLineLeftSpacing, 0.0f };
+    ImVec2 screenStartPos = ImGui::GetWindowPos() + ImGui::GetWindowContentRegionMin() + _mainContentPadding + ImVec2{ _textLineLeftSpacing, 0.0f };
+
+    return screenStartPos;
+}
+
+auto TextEditor::isValidCoordinate(const LineCoordinate& lineCoord) const -> bool
+{
+    // Rows
+    if (lineCoord.lineNum < 0 || lineCoord.lineNum >= _textLines.size())
+        return false;
+
+    // Columns(include the bounds of text)
+    if (lineCoord.column < 0 || lineCoord.column > _textLines[lineCoord.lineNum].text.size())
+        return false;
+
+    return true;
+}
+
+auto TextEditor::isMousePosInMainEditorFrame() const -> bool
+{
+    // ** when you are using scrolling and if you want to get the content height, you have to type the following code **
+    // scrollY + ImGui::GetContentRegionMax().y
+    // scrollY + ImGui::GetWindowContentRegionMax().y
+
+    ImVec2 contentRegion = ImGui::GetContentRegionMax() + ImVec2{ ImGui::GetScrollX(), ImGui::GetScrollY() };
+
+    ImVec2 contentRegionRectMin = ImGui::GetWindowPos();
+    ImVec2 contentRegionRectMax = contentRegionRectMin + contentRegion;
+
+    ImVec2 mousePos = ImGui::GetMousePos();
+
+#ifdef SHOW_MAIN_EDITOR_FRAME_RECT_WHEN_HOVERED
+    ImGui::GetForegroundDrawList()->AddRect(contentRegionRectMin, contentRegionRectMax, IM_COL32(255, 0, 255, 255));
+#endif
+
+    if (mousePos.x > contentRegionRectMin.x && mousePos.x < contentRegionRectMax.x &&
+        mousePos.y > contentRegionRectMin.y && mousePos.y < contentRegionRectMax.y)
+        return true;
+
+    return false;
+}
+
+auto TextEditor::convertLineCoordinateToScreenPos(const LineCoordinate& lineCoord) const -> ImVec2
+{
+    ImVec2 screenPos = this->getLineCoordinateScreenStartPos();
+    {
+        screenPos.y += lineCoord.lineNum * _lineHeight;
+    }
+
+    if (lineCoord.column > 0)
+    {
+        screenPos.x += _textLines[lineCoord.lineNum].cumulativeCharWidths[lineCoord.column - 1];
+    }
+
+    return screenPos;
+}
+
+auto TextEditor::convertMousePosToLineCoordinate(const ImVec2& mousePos) const -> LineCoordinate
+{
+    ImVec2 startPos = this->getLineCoordinateScreenStartPos();
+    ImVec2 distance = mousePos - startPos;
+
+    int32_t lineNum = std::max(0, (int32_t)floor(distance.y / _lineHeight));
+    int32_t column  = 0;
+
+    lineNum = std::min(lineNum, (int32_t)(_textLines.size() - 1));
+
+    /**
+     * start to convert
+     */
+    const TextLine& textLine = _textLines[lineNum];
+
+    int32_t columnIdx = 0;
+    float   lastCumulativeWidth = 0.0f;
+    
+    // TODO : UTF8 SUPPORT
+    while (columnIdx < textLine.text.size())
+    {
+        float charWidth = lastCumulativeWidth - textLine.cumulativeCharWidths[columnIdx - 1];
+
+        if (distance.x < textLine.cumulativeCharWidths[columnIdx] - charWidth * 0.5f)
+            break;
+
+        lastCumulativeWidth = textLine.cumulativeCharWidths[columnIdx];
+
+        columnIdx++;
+    }
+
+    // // reached to the last index
+    // if (columnIdx == textLine.text.size() && textLine.text.size() > 1)
+    // {
+    //     columnIdx--;
+    // }
+
+#ifdef SHOW_START_POS_OF_LINE_COORDINATE_WHEN_HOVERED
+    ImGui::GetForegroundDrawList()->AddCircle(startPos, 5, IM_COL32(255, 0, 255, 255));
+#endif
+
+    std::cout << distance.x << ' ' << distance.y << " | " << lineNum << ' ' << columnIdx << '\n';
+
+    return LineCoordinate{ lineNum, columnIdx };
 }
 
 void TextEditor::calcAllTextLineSizes()
@@ -588,13 +865,23 @@ void TextEditor::calcAllTextLineSizes()
 void TextEditor::calcTextLineSize(int32_t lineIdx)
 {
     _textBuffer.clear();
+    _textLines[lineIdx].cumulativeCharWidths.clear();
+    //_textLines[lineIdx].charXPivots.clear();
 
+    ImVec2 lastSize = _currFont->CalcTextSizeA(_currFont->FontSize, FLT_MAX, 0.0f, "");
+
+    // TODO : UTF8 SUPPORT
     for (auto& charInfo : _textLines[lineIdx].text)
     {
         _textBuffer.push_back(charInfo.ch);
+
+        lastSize = _currFont->CalcTextSizeA(_currFont->FontSize, FLT_MAX, 0.0f, _textBuffer.c_str());
+
+        _textLines[lineIdx].cumulativeCharWidths.push_back(lastSize.x);
+        //_textLines[lineIdx].charXPivots.push_back(lastSize.x);
     }
 
-    _textLines[lineIdx].size = _currFont->CalcTextSizeA(_currFont->FontSize, FLT_MAX, 0.0f, _textBuffer.c_str());
+    _textLines[lineIdx].width = lastSize.x;
 }
 
 void TextEditor::updateAdditionalLineNums()
@@ -623,7 +910,7 @@ void TextEditor::calcAllLineNumSizes()
 
 void TextEditor::calcLineNumSize(int32_t lineIdx)
 {
-    _lineNums[lineIdx].size = _currFont->CalcTextSizeA(_currFont->FontSize, FLT_MAX, 0.0f, _lineNums[lineIdx].numStr.c_str());
+    _lineNums[lineIdx].width = _currFont->CalcTextSizeA(_currFont->FontSize, FLT_MAX, 0.0f, _lineNums[lineIdx].numStr.c_str()).x;
 }
 
 auto TextEditor::getMaxTextLineWidth() const -> float
@@ -632,7 +919,7 @@ auto TextEditor::getMaxTextLineWidth() const -> float
 
     for (int32_t lineIdx = 0; lineIdx < _textLines.size(); lineIdx++)
     {
-        maxTextLineWidth = std::max(maxTextLineWidth, _textLines[lineIdx].size.x);
+        maxTextLineWidth = std::max(maxTextLineWidth, _textLines[lineIdx].width);
     }
 
     return maxTextLineWidth;
@@ -664,6 +951,7 @@ void TextEditor::SetText(const std::string_view& text)
     _textLines.clear();
     _textLines.emplace_back();
 
+    // TODO : UTF8 SUPPORT
     for (auto ch : text)
     {
         // if ('r' == ch)
@@ -675,6 +963,16 @@ void TextEditor::SetText(const std::string_view& text)
         if ('\n' == ch)
         {
             _textLines.emplace_back();
+        }
+        else if ('\t' == ch) // don't use tab symbols instead use 4 spaces // TODO : mixing spaces and tabs
+        {
+            // UTF8 WARNING
+            int32_t maxCnt = _kTabSize - _textLines.back().text.size() % _kTabSize;
+
+            for (int32_t cnt = 0; cnt < maxCnt; cnt++)
+            {
+                _textLines.back().text.push_back(CharInfo{ ' ' });
+            }
         }
         else // characters
         {

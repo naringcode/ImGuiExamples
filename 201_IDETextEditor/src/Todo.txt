@@ -5,3 +5,5 @@
 - Input 기능 적용
 
 - Content Width의 최대 크기를 구할 때 반복문 순회 말고 세그먼트 트리를 고려할 수 있을 것 같다고 예상은 하는 중
+
+- Tab Spacing

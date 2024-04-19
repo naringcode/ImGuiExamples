@@ -201,13 +201,13 @@ int main(int, char**)
 	markers.insert(std::make_pair<int, std::string>(6, "Example error here:\nInclude file not found: \"TextEditor.h\""));
 	markers.insert(std::make_pair<int, std::string>(41, "Another example error"));
 	editor.SetErrorMarkers(markers);
-
+	
 	// "breakpoint" markers
 	TextEditor::Breakpoints bpts;
 	bpts.insert(24);
 	bpts.insert(47);
 	editor.SetBreakpoints(bpts);
-
+	
 	static const char* fileToEdit = "src/ImGuiColorTextEdit/TextEditor.cpp";
 	//	static const char* fileToEdit = "test.cpp";
 

@@ -324,11 +324,12 @@ int main(int argc, char* argv[])
                 ImVec2 sizeC = ImGui::GetFont()->CalcTextSizeA(ImGui::GetFontSize(), FLT_MAX, 0.0f, "1");
                 ImVec2 sizeD = ImGui::GetFont()->CalcTextSizeA(ImGui::GetFontSize(), FLT_MAX, 0.0f, u8"한A나1");
                 ImVec2 sizeE = ImGui::GetFont()->CalcTextSizeA(ImGui::GetFontSize(), FLT_MAX, 0.0f, "");
-                ImVec2 sizeF = ImGui::GetFont()->CalcTextSizeA(ImGui::GetFontSize(), FLT_MAX, 0.0f, "\t");
+                ImVec2 sizeF = ImGui::GetFont()->CalcTextSizeA(ImGui::GetFontSize(), FLT_MAX, 0.0f, " ");
+                ImVec2 sizeG = ImGui::GetFont()->CalcTextSizeA(ImGui::GetFontSize(), FLT_MAX, 0.0f, "\t");
 
-                ImGui::Text(u8"한나 : [%d, %d], A : [%d, %d], 1 : [%d, %d], 한A나1 : [%d, %d], Empty : [%d, %d], Tab : [%d, %d]",
-                            (int)sizeA.x, (int)sizeA.y, (int)sizeB.x, (int)sizeB.y, (int)sizeC.x, (int)sizeC.y,
-                            (int)sizeD.x, (int)sizeD.y, (int)sizeE.x, (int)sizeE.y, (int)sizeF.x, (int)sizeF.y);
+                ImGui::Text(u8"한나 : [%d, %d], A : [%d, %d], 1 : [%d, %d], 한A나1 : [%d, %d], Empty : [%d, %d], Space : [%d, %d], Tab : [%d, %d]",
+                            (int)sizeA.x, (int)sizeA.y, (int)sizeB.x, (int)sizeB.y, (int)sizeC.x, (int)sizeC.y, (int)sizeD.x, (int)sizeD.y,
+                            (int)sizeE.x, (int)sizeE.y, (int)sizeF.x, (int)sizeF.y, (int)sizeG.x, (int)sizeG.y);
             }
 
             // static char s_BuffA[255] = u8"한글";
