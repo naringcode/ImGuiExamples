@@ -317,6 +317,19 @@ int main(int argc, char* argv[])
             ImGui::Text("NanumGothic.ttf Only");
             ImGui::Text(u8"한글은 표현할 수 있나요?!");
 
+            // Compare Sizes
+            {
+                ImVec2 sizeA = ImGui::GetFont()->CalcTextSizeA(ImGui::GetFontSize(), FLT_MAX, 0.0f, u8"한나");
+                ImVec2 sizeB = ImGui::GetFont()->CalcTextSizeA(ImGui::GetFontSize(), FLT_MAX, 0.0f, "A");
+                ImVec2 sizeC = ImGui::GetFont()->CalcTextSizeA(ImGui::GetFontSize(), FLT_MAX, 0.0f, "1");
+                ImVec2 sizeD = ImGui::GetFont()->CalcTextSizeA(ImGui::GetFontSize(), FLT_MAX, 0.0f, u8"한A나1");
+                ImVec2 sizeE = ImGui::GetFont()->CalcTextSizeA(ImGui::GetFontSize(), FLT_MAX, 0.0f, "");
+
+                ImGui::Text(u8"한나 : [%d, %d], A : [%d, %d], 1 : [%d, %d], 한A나1 : [%d, %d], Empty : [%d, %d]", 
+                            (int)sizeA.x, (int)sizeA.y, (int)sizeB.x, (int)sizeB.y, (int)sizeC.x, (int)sizeC.y,
+                            (int)sizeD.x, (int)sizeD.y, (int)sizeE.x, (int)sizeE.y);
+            }
+
             // static char s_BuffA[255] = u8"한글";
             // ImGui::InputText("UTF-8##1", &s_BuffA, _countof(s_BuffA));
 
