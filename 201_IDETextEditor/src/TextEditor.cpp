@@ -1,11 +1,15 @@
 #include "TextEditor.h"
 
-#include <iostream>
-
+// #include <iostream>
 #include <format>
+
+#include <chrono>
+
+#include <imgui_internal.h>
 
 #define SHOW_TEXT_LINE_PIVOT_POS
 // #define SHOW_TEXT_LINE_START_POS
+#define SHOW_CHAR_SEPARATE_LINE
 // #define SHOW_BREAKPOINT_FRAME_RECT
 #define SHOW_BREAKPOINT_BUTTON_RECT
 // #define SHOW_BREAKPOINT_FRAME_MARGIN_RECT
@@ -21,6 +25,15 @@
 #endif
 
 constexpr int32_t g_kShortBufferLen = 256;
+
+TextEditor::TextEditor(ImFont* font)
+{
+    _textLines.push_back(TextLine{ }); // empty text
+
+    // GetFont() should be called after ImGui::NewFrame()
+    // _currFont = nullptr != font ? font : ImGui::GetFont();
+    _currFont = font;
+}
 
 void TextEditor::RenderWindow(bool* open)
 {
@@ -252,7 +265,7 @@ void TextEditor::renderEditor(ImVec2 editorFrameSize)
      * Styles
      */
     this->pushStyleColor(ImGuiCol_ChildBg,     ImGui::ColorConvertU32ToFloat4(IM_COL32(30, 30, 30, 255)));
-    //this->pushStyleColor(ImGuiCol_ScrollbarBg, ImGui::ColorConvertU32ToFloat4(IM_COL32(30, 30, 30, 255)));
+    this->pushStyleColor(ImGuiCol_ScrollbarBg, ImGui::ColorConvertU32ToFloat4(IM_COL32(30, 30, 30, 255)));
     this->pushStyleColor(ImGuiCol_Border,      ImGui::ColorConvertU32ToFloat4(IM_COL32(62, 62, 62, 255)));
     
     // Old : give widths from zero to one by testing, and we handle positions programmatically.
@@ -422,7 +435,6 @@ void TextEditor::renderEditor(ImVec2 editorFrameSize)
 #ifdef SHOW_TEXT_LINE_START_POS
                 ImGui::GetForegroundDrawList()->AddCircle(ImGui::GetCursorScreenPos(), 1.6f, IM_COL32(255, 0, 255, 255));
 #endif
-
                 _textBuffer.clear();
 
                 for (auto& charInfo : _textLines[lineIdx].text)
@@ -436,6 +448,19 @@ void TextEditor::renderEditor(ImVec2 editorFrameSize)
                 renderPivot.x = _mainContentPadding.x;
                 renderPivot.y += _lineHeight;
             }
+
+#ifdef SHOW_CHAR_SEPARATE_LINE
+            for (int32_t lineIdx = minLineIdx; lineIdx <= maxLineIdx; lineIdx++)
+            {
+                for (int32_t column = 0; column <= _textLines[lineIdx].text.size(); column++)
+                {
+                    ImVec2 startPos = this->convertLineCoordinateToScreenPos({ lineIdx, column }) + ImVec2{ 0.0f, _textLineTopSpacing };
+                    ImVec2 endPos = startPos + ImVec2{ 0.0f, kFontHeight };
+
+                    childDrawList->AddLine(startPos, endPos, IM_COL32(0, 255, 0, 155));
+                }
+            }
+#endif
 
             /**
              * Cursor
@@ -829,7 +854,7 @@ auto TextEditor::convertMousePosToLineCoordinate(const ImVec2& mousePos) const -
     // TODO : UTF8 SUPPORT
     while (columnIdx < textLine.text.size())
     {
-        float charWidth = lastCumulativeWidth - textLine.cumulativeCharWidths[columnIdx - 1];
+        float charWidth = textLine.cumulativeCharWidths[columnIdx] - lastCumulativeWidth;
 
         if (distance.x < textLine.cumulativeCharWidths[columnIdx] - charWidth * 0.5f)
             break;
@@ -848,8 +873,6 @@ auto TextEditor::convertMousePosToLineCoordinate(const ImVec2& mousePos) const -
 #ifdef SHOW_START_POS_OF_LINE_COORDINATE_WHEN_HOVERED
     ImGui::GetForegroundDrawList()->AddCircle(startPos, 5, IM_COL32(255, 0, 255, 255));
 #endif
-
-    std::cout << distance.x << ' ' << distance.y << " | " << lineNum << ' ' << columnIdx << '\n';
 
     return LineCoordinate{ lineNum, columnIdx };
 }

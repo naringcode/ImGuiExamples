@@ -10,7 +10,6 @@
 
 #include <array>
 #include <vector>
-#include <queue>
 #include <unordered_map>
 #include <unordered_set>
 
@@ -21,7 +20,6 @@
 
 #define IMGUI_DEFINE_MATH_OPERATORS
 #include <imgui.h>
-#include <imgui_internal.h>
 
 class TextEditor
 {
@@ -37,7 +35,7 @@ public:
 
         std::vector<float> cumulativeCharWidths; // helpful for finding a column
 
-        float width; // text line width
+        float width; // text line rendering width(not length, not counts of characters)
     };
 
     struct LineNumber
@@ -86,15 +84,7 @@ public:
     };
 
 public:
-    TextEditor(ImFont* font = nullptr)
-    {
-        _textLines.push_back(TextLine{ }); // empty text
-
-        // GetFont() should be called after ImGui::NewFrame()
-        // _currFont = nullptr != font ? font : ImGui::GetFont();
-        _currFont = font;
-    }
-
+    TextEditor(ImFont* font = nullptr);
     ~TextEditor() = default;
 
     TextEditor(const TextEditor& rhs) = delete;
@@ -451,6 +441,12 @@ private:
     double _lastLeftButtonClickedTime = -1.0;
 
     LineCoordinate _cursorCoord = { 0, 0 };
+
+    // TODO Soon
+    static constexpr double _kCursorBlinkInterval = 400.0;
+    double _cursorBlinkingTime = 0.0;
+
+    bool _isCursorBlicking = false;
 
     /**
      * Editor Rendering Info
