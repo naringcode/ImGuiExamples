@@ -1,6 +1,6 @@
 #include "TextEditor.h"
 
-// #include <iostream>
+#include <iostream>
 #include <format>
 
 #include <chrono>
@@ -457,7 +457,7 @@ void TextEditor::renderEditor(ImVec2 editorFrameSize)
                     ImVec2 startPos = this->convertLineCoordinateToScreenPos({ lineIdx, column }) + ImVec2{ 0.0f, _textLineTopSpacing };
                     ImVec2 endPos = startPos + ImVec2{ 0.0f, kFontHeight };
 
-                    childDrawList->AddLine(startPos, endPos, IM_COL32(0, 255, 0, 155));
+                    childDrawList->AddLine(startPos, endPos, IM_COL32(0, 255, 0, 100));
                 }
             }
 #endif
@@ -661,6 +661,8 @@ void TextEditor::handleMainEditorKeyboardInputs()
     bool shiftPressed = io.KeyShift;
     bool ctrlPressed  = io.KeyCtrl;
     bool altPressed   = io.KeyAlt;
+
+
 }
 
 void TextEditor::handleMainEditorMouseInputs()
@@ -669,86 +671,326 @@ void TextEditor::handleMainEditorMouseInputs()
     
     LineCoordinate lineCoordinate = this->convertMousePosToLineCoordinate(ImGui::GetMousePos());
 
-    bool shiftPressed = io.KeyShift;
-    bool ctrlPressed  = io.KeyCtrl;
-    bool altPressed   = io.KeyAlt;
+    /**
+     * deactivate mouse event
+     */
+    if (false == ImGui::IsMouseDown(ImGuiMouseButton_Left))
+    {
+        _mouseEventOnGoing = false;
+    }
 
-    // if (isDragging())
+    /**
+     * ** Customize Yourself! **
+     * check drag event(precede one left click first)
+     * 
+     * Visual Studio style drag event
+     */
+    if (_mouseEventOnGoing)
+    {
+        // mouse cursor
+        ImGui::SetMouseCursor(ImGuiMouseCursor_TextInput);
+        
+        if (this->isMousePosInMainEditorFrame())
+        {
 
+        }
+        else // out of the main editor frame(needed to scroll by code)
+        {
+
+        }
+        
+        return;
+    }
+
+    /**
+     * ** Customize Yourself! **
+     * check click event
+     * 
+     * Visual Studio style drag event
+     */
     if (ImGui::IsWindowHovered())
-    // if (ImGui::IsWindowFocused())
     {
         bool leftButtonClicked       = ImGui::IsMouseClicked(ImGuiMouseButton_Left);
         bool leftButtonDoubleClicked = ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left);
         bool leftButtonTripleClicked = false;
 
-        if (this->isMousePosInMainEditorFrame() /* && !(is in selection) */)
+        // check triple click
+        if (leftButtonClicked && false == leftButtonDoubleClicked)
         {
-            ImGui::SetMouseCursor(ImGuiMouseCursor_TextInput);
-        }
-
-        // triple click possibility
-        if (leftButtonClicked && false == leftButtonDoubleClicked && -1.0 != _lastLeftButtonClickedTime)
-        {
-            if (_currMainTime - _lastLeftButtonClickedTime < io.MouseDoubleClickTime)
+            if (_currMainTime - _lastLeftButtonDoubleClickedTime < io.MouseDoubleClickTime)
             {
+                _lastLeftButtonDoubleClickedTime = -10.0;
+
                 leftButtonTripleClicked = true;
             }
         }
 
-        /**
-         * Main Logic
-         */
+        // check click same coordinate
+        if (leftButtonDoubleClicked || leftButtonTripleClicked)
+        {
+            if ()
+            {
+                leftButtonDoubleClicked = false;
+                leftButtonTripleClicked = false;
+
+                leftButtonClicked = true;
+            }
+        }
+
+        _mouseEventOnGoing = leftButtonClicked || leftButtonDoubleClicked || leftButtonTripleClicked;
+
+        // mouse cursor
+        if (this->isMousePosInMainEditorFrame() /* !(is in selection) */)
+        {
+            ImGui::SetMouseCursor(ImGuiMouseCursor_TextInput);
+        }
+
         if (leftButtonTripleClicked)
         {
-            _cursorCoord = lineCoordinate;
 
-            // if (false == ctrlPressed) // line selection
-            // {
-            // 
-            // }
 
-            _lastLeftButtonClickedTime = -1.0;
-
-            return;
         }
         else if (leftButtonDoubleClicked)
         {
-            _cursorCoord = lineCoordinate;
+            _lastLeftButtonDoubleClickedTime = _currMainTime;
 
-            // if (false == ctrlPressed) // 
-            // {
-            // 
-            // }
+            if (_leftButtonClickedShiftPressed && _leftButtonClickedCtrlPressed)
+            {
+                // keep leftButtonClicked event
+            }
+            else if (_leftButtonClickedShiftPressed)
+            {
+                // keep leftButtonClicked event
+            }
+            else if (_leftButtonClickedCtrlPressed)
+            {
+                // keep leftButtonClicked event
+            }
+            else
+            {
+                _temporaryTextSelection.start = _cursorCoord;
+                _temporaryTextSelection.end   = _cursorCoord;
 
-            _lastLeftButtonClickedTime = _currMainTime;
+                _textSelectionMode = TextSelectionMode::Word;
+            }
 
-            return;
+            _finalTextSelection = this->convertToFinalTextSelection(_temporaryTextSelection, _textSelectionMode);
+            _cursorCoord        = this->convertToCursorCoordinate(_temporaryTextSelection, _textSelectionMode);
         }
         else if (leftButtonClicked)
         {
-            _cursorCoord = lineCoordinate;
+            _leftButtonClickedShiftPressed = io.KeyShift;
+            _leftButtonClickedCtrlPressed  = io.KeyCtrl;
+            _leftButtonClickedAltPressed   = io.KeyAlt;
+            
+            if (_leftButtonClickedShiftPressed && _leftButtonClickedCtrlPressed)
+            {
+                _temporaryTextSelection.end = _cursorCoord;
 
-            // if (ctrlPressed) // word selection
-            // {
-            // 
-            // }
-            // else // none selection(cursor only)
-            // {
-            // 
-            // }
+                _textSelectionMode = TextSelectionMode::Word;
 
-            _lastLeftButtonClickedTime = _currMainTime;
+            }
+            else if (_leftButtonClickedShiftPressed)
+            {
+                _temporaryTextSelection.end = _cursorCoord;
 
-            return;
+                _textSelectionMode = TextSelectionMode::Simple;
+            }
+            else if (_leftButtonClickedCtrlPressed)
+            {
+                _temporaryTextSelection.start = _cursorCoord;
+                _temporaryTextSelection.end   = _cursorCoord;
+
+                _textSelectionMode = TextSelectionMode::Word;
+            }
+            else
+            {
+                _temporaryTextSelection.start = _cursorCoord;
+                _temporaryTextSelection.end   = _cursorCoord;
+
+                _textSelectionMode = TextSelectionMode::Simple;
+            }
+
+            _finalTextSelection = this->convertToFinalTextSelection(_temporaryTextSelection, _textSelectionMode);
+            _cursorCoord        = this->convertToCursorCoordinate(_temporaryTextSelection, _textSelectionMode);
         }
+    }
 
-        // dragging by the left button
-        if (ImGui::IsMouseDragging(ImGuiMouseButton_Left) && ImGui::IsMouseDown(ImGuiMouseButton_Left))
-        {
-            _cursorCoord = lineCoordinate;
+    if (ImGui::IsWindowHovered())
+    {
+        // bool leftButtonClicked       = ImGui::IsMouseClicked(ImGuiMouseButton_Left);
+        // bool leftButtonDoubleClicked = ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left);
+        // bool leftButtonTripleClicked = false;
+        // 
+        // if (this->isMousePosInMainEditorFrame() /* && !(is in selection) */)
+        // {
+        //     ImGui::SetMouseCursor(ImGuiMouseCursor_TextInput);
+        // }
+        // 
+        // // triple click possibility
+        // if (leftButtonClicked && false == leftButtonDoubleClicked && -1.0 != _lastLeftButtonDoubleClickedTime)
+        // {
+        //     if (_currMainTime - _lastLeftButtonDoubleClickedTime < io.MouseDoubleClickTime)
+        //     {
+        //         leftButtonTripleClicked = true;
+        //     }
+        // }
 
-        }
+        // /**
+        //  * Dragging Events(** Customize yourself! **)
+        //  */
+        // if (ImGui::IsMouseDragging(ImGuiMouseButton_Left) && ImGui::IsMouseDown(ImGuiMouseButton_Left))
+        // {
+        //     if (shiftPressed && ctrlPressed)
+        //     {
+        // 
+        //     }
+        //     else if (shiftPressed)
+        //     {
+        //         // Simple
+        //     }
+        //     else if (ctrlPressed)
+        //     {
+        //         // Word
+        //     }
+        //     else
+        //     {
+        //         // Simple
+        //     }
+        // 
+        //     // _cursorCoord = this->convertToCursorCoordinate(lineCoordinate);
+        // }
+        // 
+        // /**
+        //  * Click Events(** Customize yourself! **)
+        //  */
+        // else if (leftButtonTripleClicked)
+        // {
+        //     if (shiftPressed && ctrlPressed)
+        //     {
+        // 
+        //     }
+        //     else if (shiftPressed)
+        //     {
+        //         // Simple
+        //     }
+        //     else if (ctrlPressed)
+        //     {
+        // 
+        //     }
+        //     else
+        //     {
+        //         // Line
+        //     }
+        // 
+        //     _lastLeftButtonClickedTime = -1.0;
+        // }
+        // else if (leftButtonDoubleClicked)
+        // {
+        //     if (shiftPressed && ctrlPressed)
+        //     {
+        // 
+        //     }
+        //     else if (shiftPressed)
+        //     {
+        // 
+        //     }
+        //     else if (ctrlPressed)
+        //     {
+        // 
+        //     }
+        //     else
+        //     {
+        // 
+        //     }
+        // 
+        //     _lastLeftButtonClickedTime = _currMainTime;
+        // }
+        // else if (leftButtonClicked)
+        // {
+        //     _leftButtonClickedShiftPressed = io.KeyShift;
+        //     _leftButtonClickedCtrlPressed  = io.KeyCtrl;
+        //     _leftButtonClickedAltPressed   = io.KeyAlt;
+        // 
+        //     if (shiftPressed && ctrlPressed)
+        //     {
+        // 
+        //     }
+        //     else if (shiftPressed)
+        //     {
+        // 
+        //     }
+        //     else if (ctrlPressed)
+        //     {
+        // 
+        //     }
+        //     else
+        //     {
+        // 
+        //     }
+        // 
+        //     _lastLeftButtonClickedTime = _currMainTime;
+        // }
+
+        // if (leftButtonTripleClicked)
+        // {
+        //     _cursorCoord = lineCoordinate;
+        // 
+        //     _temporaryTextSelection.start = _cursorCoord;
+        //     _temporaryTextSelection.end   = _cursorCoord;
+        // 
+        //     if (false == ctrlPressed)
+        //     {
+        //         _textSelectionMode = TextSelectionMode::Line;
+        //     }
+        //     else
+        //     {
+        // 
+        //     }
+        // 
+        //     _finalTextSelection = this->convertToFinalTextSelection(_temporaryTextSelection, _textSelectionMode);
+        // 
+        //     _lastLeftButtonClickedTime = -1.0;
+        // 
+        //     return;
+        // }
+        // else if (leftButtonDoubleClicked)
+        // {
+        //     _cursorCoord = lineCoordinate;
+        // 
+        //     // if (false == ctrlPressed) // 
+        //     // {
+        //     // 
+        //     // }
+        // 
+        //     _lastLeftButtonClickedTime = _currMainTime;
+        // 
+        //     return;
+        // }
+        // else if (leftButtonClicked)
+        // {
+        //     _cursorCoord = lineCoordinate;
+        // 
+        //     // if (ctrlPressed) // word selection
+        //     // {
+        //     // 
+        //     // }
+        //     // else // none selection(cursor only)
+        //     // {
+        //     // 
+        //     // }
+        // 
+        //     _lastLeftButtonClickedTime = _currMainTime;
+        // 
+        //     return;
+        // }
+        // 
+        // // dragging by the left button
+        // if (ImGui::IsMouseDragging(ImGuiMouseButton_Left) && ImGui::IsMouseDown(ImGuiMouseButton_Left))
+        // {
+        //     _cursorCoord = lineCoordinate;
+        // 
+        // }
     }
 }
 
@@ -877,6 +1119,18 @@ auto TextEditor::convertMousePosToLineCoordinate(const ImVec2& mousePos) const -
     return LineCoordinate{ lineNum, columnIdx };
 }
 
+auto TextEditor::convertToFinalTextSelection(const TextSelection& textSelection, TextSelectionMode selectionMode) const -> TextSelection
+{
+    
+    return textSelection;
+}
+
+auto TextEditor::convertToCursorCoordinate(const TextSelection& textSelection, TextSelectionMode selectionMode) const -> LineCoordinate
+{
+
+    return textSelection.end;
+}
+
 void TextEditor::calcAllTextLineSizes()
 {
     for (int32_t lineIdx = 0; lineIdx < _textLines.size(); lineIdx++)
@@ -974,6 +1228,17 @@ void TextEditor::SetText(const std::string_view& text)
     _textLines.clear();
     _textLines.emplace_back();
 
+    _breakPoints.clear();
+
+    _temporaryTextSelection.start = LineCoordinate{ 0, 0 };
+    _temporaryTextSelection.end   = LineCoordinate{ 0, 0 };
+    
+    _finalTextSelection.start = LineCoordinate{ 0, 0 };
+    _finalTextSelection.end   = LineCoordinate{ 0, 0 };
+
+    _temporaryCursorCoord = LineCoordinate{ 0, 0 };
+    _finalCursorCoord     = LineCoordinate{ 0, 0 };
+
     // TODO : UTF8 SUPPORT
     for (auto ch : text)
     {
@@ -985,6 +1250,9 @@ void TextEditor::SetText(const std::string_view& text)
         
         if ('\n' == ch)
         {
+            // TODO : Selection Space
+            // _textLines.back().text.push_back(CharInfo{ '\n' });
+
             _textLines.emplace_back();
         }
         else if ('\t' == ch) // don't use tab symbols instead use 4 spaces // TODO : mixing spaces and tabs

@@ -62,8 +62,8 @@ public:
     struct LineCoordinate
     {
         /**
-         * column
-         * 0  1  2  3  4  5(** consider out of bounds **)
+         * column | consider out of bounds(like "if (lineCoord.column > 0) { cumulativeCharWidths[lineCoord.column - 1]; }")
+         * 0  1  2  3  4  5
          * ⊿  ⊿  ⊿  ⊿  ⊿  ⊿
          * 忙式式成式式成式式成式式成式式忖 lineNum
          * 弛00弛01弛02弛03弛04弛 ∠ 0
@@ -79,8 +79,15 @@ public:
 
     struct TextSelection
     {
-        LineCoordinate start;
-        LineCoordinate end;
+        LineCoordinate start = LineCoordinate{ 0, 0 };
+        LineCoordinate end   = LineCoordinate{ 0, 0 };
+    };
+
+    enum class TextSelectionMode
+    {
+        Simple,
+        Word, // select as word units
+        Line, // select as line units
     };
 
 public:
@@ -134,7 +141,10 @@ private:
      * Converting
      */
     auto convertLineCoordinateToScreenPos(const LineCoordinate& lineCoord) const -> ImVec2;
-    auto convertMousePosToLineCoordinate(const ImVec2& mousePos) const -> LineCoordinate;
+    auto convertMousePosToLineCoordinate(const ImVec2& mousePos) const -> LineCoordinate; // call adjustCoordinate() to use return value
+
+    auto convertToFinalTextSelection(const TextSelection& textSelection, TextSelectionMode selectionMode) const -> TextSelection;
+    auto convertToCursorCoordinate(const TextSelection& textSelection, TextSelectionMode selectionMode) const -> LineCoordinate;
 
 private:
     /**
@@ -438,15 +448,22 @@ private:
     bool _handleEditorKeyboardInputs = true;
     bool _handleEditorMouseInputs    = true;
 
-    double _lastLeftButtonClickedTime = -1.0;
+    bool _mouseEventOnGoing = false;
 
-    LineCoordinate _cursorCoord = { 0, 0 };
+    // track whether shift, ctrl, or alt keys are pressed when the left mouse button is clicked(not double, not triple)
+    bool _leftButtonClickedShiftPressed = false;
+    bool _leftButtonClickedCtrlPressed  = false;
+    bool _leftButtonClickedAltPressed   = false;
 
-    // TODO Soon
-    static constexpr double _kCursorBlinkInterval = 400.0;
-    double _cursorBlinkingTime = 0.0;
+    double _lastLeftButtonDoubleClickedTime = -10.0;
 
-    bool _isCursorBlicking = false;
+    TextSelectionMode _textSelectionMode = TextSelectionMode::Simple;
+
+    TextSelection _temporaryTextSelection; // metadata before conversion to _finalTextSelection
+    TextSelection _finalTextSelection;     // finalized actual text selection used in the TextEditor
+
+    LineCoordinate _temporaryCursorCoord = LineCoordinate{ 0, 0 }; // metadata before conversion to _finalCursorCoord
+    LineCoordinate _finalCursorCoord     = LineCoordinate{ 0, 0 }; // finalized actual cursor coord used in the TextEditor
 
     /**
      * Editor Rendering Info
@@ -465,6 +482,12 @@ private:
     float _textLineRightSpacing = 100.0f;
 
     float _lineHeight = 1.0f; // automatically calculated internally
+
+    // TODO Soon
+    static constexpr double _kCursorBlinkInterval = 400.0;
+    double _cursorBlinkingTime = 0.0;
+
+    bool _isCursorBlicking = false; // internal use
 
     bool _showBreakPoints = true;
     bool _showLineNums    = true;
