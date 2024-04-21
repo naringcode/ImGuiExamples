@@ -35,14 +35,14 @@ public:
 
         std::vector<float> cumulativeCharWidths; // helpful for finding a column
 
-        float width; // text line rendering width(not length, not counts of characters)
+        float renderingWidth; // text line rendering width(not length, not counts of characters)
     };
 
     struct LineNumber
     {
         std::string numStr;
 
-        float width;
+        float renderingWidth;
     };
 
     // using TextLine = std::vector<CharInfo>;
@@ -73,14 +73,56 @@ public:
          * 弛20弛21弛22弛23弛24弛 ∠ 2
          * 戌式式扛式式扛式式扛式式扛式式戎
          */
-        int32_t lineNum;
-        int32_t column;
+        int32_t lineNum = 0;
+        int32_t column  = 0;
+
+        bool operator==(const LineCoordinate& rhs) const
+        {
+            return lineNum == rhs.lineNum && column == rhs.column;
+        }
+
+        bool operator!=(const LineCoordinate& rhs) const
+        {
+            return lineNum != rhs.lineNum || column != rhs.column;
+        }
+
+        bool operator<(const LineCoordinate& rhs) const
+        {
+            if (lineNum != rhs.lineNum)
+                return lineNum < rhs.lineNum;
+
+            return column < rhs.column;
+        }
+
+        bool operator<=(const LineCoordinate& rhs) const
+        {
+            if (lineNum != rhs.lineNum)
+                return lineNum < rhs.lineNum;
+
+            return column <= rhs.column;
+        }
+        
+        bool operator>(const LineCoordinate& rhs) const
+        {
+            if (lineNum != rhs.lineNum)
+                return lineNum > rhs.lineNum;
+
+            return column > rhs.column;
+        }
+
+        bool operator>=(const LineCoordinate& rhs) const
+        {
+            if (lineNum != rhs.lineNum)
+                return lineNum > rhs.lineNum;
+
+            return column >= rhs.column;
+        }
     };
 
     struct TextSelection
     {
-        LineCoordinate start = LineCoordinate{ 0, 0 };
-        LineCoordinate end   = LineCoordinate{ 0, 0 };
+        LineCoordinate start;
+        LineCoordinate end;
     };
 
     enum class TextSelectionMode
@@ -125,23 +167,24 @@ private:
     /**
      * Coordinate
      */
-    auto adjustCoordinate(const LineCoordinate& lineCoord) const -> LineCoordinate;
+    auto sanitizeCoordinate(const LineCoordinate& lineCoord) const -> LineCoordinate;
 
     auto getLineCoordinateScreenStartPos() const -> ImVec2;
-
     auto isValidCoordinate(const LineCoordinate& lineCoord) const -> bool;
+
+    // auto findFirstCharPosInWord()
 
     /**
      * Mouse
      */
-    // check the mouse pos in the main editor frame except scrollbar frame
-    auto isMousePosInMainEditorFrame() const -> bool;
+    // check screen pos(especially mouse pos) in the main editor frame except scrollbar frame
+    auto isScreenPosInMainEditorFrame(const ImVec2& screenPos) const -> bool;
 
     /**
      * Converting
      */
     auto convertLineCoordinateToScreenPos(const LineCoordinate& lineCoord) const -> ImVec2;
-    auto convertMousePosToLineCoordinate(const ImVec2& mousePos) const -> LineCoordinate; // call adjustCoordinate() to use return value
+    auto convertScreenPosToLineCoordinate(const ImVec2& screenPos) const -> LineCoordinate;
 
     auto convertToFinalTextSelection(const TextSelection& textSelection, TextSelectionMode selectionMode) const -> TextSelection;
     auto convertToCursorCoordinate(const TextSelection& textSelection, TextSelectionMode selectionMode) const -> LineCoordinate;
@@ -150,22 +193,22 @@ private:
     /**
      * Text Line
      */
-    void calcAllTextLineSizes();
-    void calcTextLineSize(int32_t lineIdx);
+    void calcAllTextLineRenderingSizes();
+    void calcTextLineRenderingSize(int32_t lineIdx);
 
     void updateAdditionalLineNums();
 
-    void calcAllLineNumSizes(); // call when we change a font type
-    void calcLineNumSize(int32_t lineNum);
+    void calcAllLineNumRenderingSizes(); // call when we change a font type
+    void calcLineNumRenderingSize(int32_t lineNum);
 
     // TODO : how to colorize comments?
     // void colorizeAllTextLines();
     // void colorizeTextLine(int32_t lineIdx);
 
-    auto getMaxTextLineWidth() const -> float;
+    auto getMaxTextLineRenderingWidth() const -> float;
     auto getMainContentRegionFullSize() const -> ImVec2;
 
-    auto getMaxLineNumWidth() const -> float;
+    auto getMaxLineNumRenderingWidth() const -> float;
 
     // TODO : UTF8 SUPPORT
     // auto getUtf8CharByteLength() const -> int32_t
@@ -284,6 +327,19 @@ public:
     auto GetTotalLines() const -> int
     {
         return (int)_textLines.size();
+    }
+
+    auto GetCursorCoordinate() const -> LineCoordinate
+    {
+        return _finalCursorCoord;
+    }
+
+    auto SetCursorCoordinate(const LineCoordinate& cursorCoord)
+    {
+        _temporaryCursorCoord     = this->sanitizeCoordinate(cursorCoord);
+        _temporaryDistanceLineNum = 0;
+
+        _finalCursorCoord = _temporaryCursorCoord;
     }
 
     auto GetMainContentPaddingX() const -> float
@@ -431,8 +487,8 @@ private:
     /**
      * Update
      */
-    bool _deferredUpdate_calcAllTextLineSizes = false;
-    bool _deferredUpdate_calcAllLineNumSizes  = false; // set true when we change a font type
+    bool _deferredUpdate_calcAllTextLineRenderingSizes = false;
+    bool _deferredUpdate_calcAllLineNumRenderingSizes  = false; // set true when we change a font type
 
     std::vector<int32_t> _deferredUpdate_additionalLineNumIndices;
 
@@ -462,9 +518,12 @@ private:
     TextSelection _temporaryTextSelection; // metadata before conversion to _finalTextSelection
     TextSelection _finalTextSelection;     // finalized actual text selection used in the TextEditor
 
-    LineCoordinate _temporaryCursorCoord = LineCoordinate{ 0, 0 }; // metadata before conversion to _finalCursorCoord
-    LineCoordinate _finalCursorCoord     = LineCoordinate{ 0, 0 }; // finalized actual cursor coord used in the TextEditor
+    LineCoordinate _temporaryCursorCoord;     // cursor coordinate when left button is clicked once or keyboard event occurs like keyMoveLeft() or keyMoveRight()
+    int32_t        _temporaryDistanceLineNum; // line num distance for keyboard event keyEventUp() and keyMoveDown()
 
+    LineCoordinate _firstClickedMousePosCoord; // in order to check double click or triple click event
+    LineCoordinate _finalCursorCoord;          // finalized actual cursor coordinate used in the TextEditor sometimes calculated from _temporaryCursorCoord and _temporaryDistanceLineNum
+    
     /**
      * Editor Rendering Info
      */

@@ -10,6 +10,7 @@
 #define SHOW_TEXT_LINE_PIVOT_POS
 // #define SHOW_TEXT_LINE_START_POS
 #define SHOW_CHAR_SEPARATE_LINE
+#define SHOW_LINE_SELECTION // will be removed
 // #define SHOW_BREAKPOINT_FRAME_RECT
 #define SHOW_BREAKPOINT_BUTTON_RECT
 // #define SHOW_BREAKPOINT_FRAME_MARGIN_RECT
@@ -151,8 +152,8 @@ void TextEditor::RenderChildWindow(ImVec2 editorFrameSize)
 
 void TextEditor::ChangeFont(ImFont* nextFont)
 {
-    _deferredUpdate_calcAllTextLineSizes = true;
-    _deferredUpdate_calcAllLineNumSizes = true;
+    _deferredUpdate_calcAllTextLineRenderingSizes = true;
+    _deferredUpdate_calcAllLineNumRenderingSizes  = true;
 
     _deferredUpdate_nextFont = nextFont;
 }
@@ -172,22 +173,20 @@ void TextEditor::updateBeforeRender()
     if (nullptr == _currFont)
     {
         _currFont = ImGui::GetFont();
-
-
     }
 
-    if (true == _deferredUpdate_calcAllTextLineSizes)
+    if (true == _deferredUpdate_calcAllTextLineRenderingSizes)
     {
-        _deferredUpdate_calcAllTextLineSizes = false;
+        _deferredUpdate_calcAllTextLineRenderingSizes = false;
 
-        this->calcAllTextLineSizes();
+        this->calcAllTextLineRenderingSizes();
     }
 
-    if (true == _deferredUpdate_calcAllLineNumSizes)
+    if (true == _deferredUpdate_calcAllLineNumRenderingSizes)
     {
-        _deferredUpdate_calcAllLineNumSizes = false;
+        _deferredUpdate_calcAllLineNumRenderingSizes = false;
 
-        this->calcAllLineNumSizes();
+        this->calcAllLineNumRenderingSizes();
     }
 
     this->updateAdditionalLineNums();
@@ -311,7 +310,8 @@ void TextEditor::renderEditor(ImVec2 editorFrameSize)
          * Variables for General Info
          */
         const float kFontHeight = _currFont->CalcTextSizeA(_currFont->FontSize, FLT_MAX, 0.0f, "#").y;
-        
+        const float kSpaceWidth = _currFont->CalcTextSizeA(_currFont->FontSize, FLT_MAX, 0.0f, " ").x;
+
         _lineHeight = kFontHeight + _textLineTopSpacing + _textLineBottomSpacing;
 
         const ImVec2 kContentSize = kFrameSize - kFrameBorderSize * 2;
@@ -337,14 +337,14 @@ void TextEditor::renderEditor(ImVec2 editorFrameSize)
         int32_t minLineIdx = 0;
         int32_t maxLineIdx = 0;
 
-        const float kMaxLineNumWidth = this->getMaxLineNumWidth();
+        const float kMaxLineNumRenderingWidth = this->getMaxLineNumRenderingWidth();
 
-        auto lineNumFrameSize = ImVec2{ kMaxLineNumWidth + _lineNumLeftSpacing + _lineNumRightSpacing, breakPointFrameSize.y };
+        auto lineNumFrameSize = ImVec2{ kMaxLineNumRenderingWidth + _lineNumLeftSpacing + _lineNumRightSpacing, breakPointFrameSize.y };
 
         /**
          * Sub Content Width
          */
-        float subContentWidth = (breakPointFrameSize.x) + (kMaxLineNumWidth + _lineNumLeftSpacing + _lineNumRightSpacing);
+        float subContentWidth = (breakPointFrameSize.x) + (kMaxLineNumRenderingWidth + _lineNumLeftSpacing + _lineNumRightSpacing);
 
         if (false == _showBreakPoints)
         {
@@ -427,6 +427,14 @@ void TextEditor::renderEditor(ImVec2 editorFrameSize)
                 }
 
                 /**
+                 * Selection
+                 */
+                // TODO : UTF8 Support
+                // LineCoordinate startCoord{ lineIdx, 0 };
+                // LineCoordinate endCoord{ lineIdx, _textLines[lineIdx].text.size() };
+
+
+                /**
                  * Text Line
                  */
                 ImGui::SetCursorPosX(renderPivot.x + _textLineLeftSpacing);
@@ -455,17 +463,52 @@ void TextEditor::renderEditor(ImVec2 editorFrameSize)
                 for (int32_t column = 0; column <= _textLines[lineIdx].text.size(); column++)
                 {
                     ImVec2 startPos = this->convertLineCoordinateToScreenPos({ lineIdx, column }) + ImVec2{ 0.0f, _textLineTopSpacing };
-                    ImVec2 endPos = startPos + ImVec2{ 0.0f, kFontHeight };
+                    ImVec2 endPos   = startPos + ImVec2{ 0.0f, kFontHeight };
 
                     childDrawList->AddLine(startPos, endPos, IM_COL32(0, 255, 0, 100));
                 }
             }
 #endif
 
+#ifdef SHOW_LINE_SELECTION
+            LineCoordinate currCoord = _finalTextSelection.start;
+
+            while (currCoord < _finalTextSelection.end)
+            {
+                LineCoordinate nextCoord{ currCoord.lineNum, currCoord.column + 1 };
+
+                if (nextCoord.column > _textLines[nextCoord.lineNum].text.size())
+                {
+                    if (nextCoord.lineNum < _finalTextSelection.end.lineNum)
+                    {
+                        ImVec2 rectMin = this->convertLineCoordinateToScreenPos(currCoord);
+                        ImVec2 rectMax = rectMin + ImVec2{ kSpaceWidth, _lineHeight };
+
+                        childDrawList->AddRectFilled(rectMin, rectMax, IM_COL32(0, 255, 0, 100));
+                    }
+
+                    currCoord.column = 0;
+                    currCoord.lineNum++;
+
+                    continue;
+                }
+
+                if (_textLines[nextCoord.lineNum].text.size())
+                {
+                    ImVec2 rectMin = this->convertLineCoordinateToScreenPos(currCoord);
+                    ImVec2 rectMax = this->convertLineCoordinateToScreenPos(nextCoord) + ImVec2{ 0.0f, _lineHeight };
+
+                    childDrawList->AddRectFilled(rectMin, rectMax, IM_COL32(0, 255, 0, 100));
+                }
+
+                currCoord.column++;
+            }
+#endif
+
             /**
              * Cursor
              */
-            if (_cursorCoord.lineNum >= minLineIdx && _cursorCoord.lineNum <= maxLineIdx)
+            if (_finalCursorCoord.lineNum >= minLineIdx && _finalCursorCoord.lineNum <= maxLineIdx)
             {
                 // constexpr float kCursorWidth = 1.0f;
 
@@ -473,7 +516,7 @@ void TextEditor::renderEditor(ImVec2 editorFrameSize)
 
                 if (focused)
                 {
-                    ImVec2 startPos = this->convertLineCoordinateToScreenPos(_cursorCoord);
+                    ImVec2 startPos = this->convertLineCoordinateToScreenPos(_finalCursorCoord);
                     ImVec2 endPos   = startPos + ImVec2{ 0.0f, _lineHeight };
 
                     childDrawList->AddLine(startPos, endPos, IM_COL32(220, 220, 220, 255));
@@ -587,9 +630,9 @@ void TextEditor::renderEditor(ImVec2 editorFrameSize)
                      */
                     if (true == _showLineNums)
                     {
-                        const float kCurrLineNumWidth = _lineNums[lineIdx].width;
+                        const float kCurrLineNumRenderingWidth = _lineNums[lineIdx].renderingWidth;
 
-                        ImGui::SetCursorPosX(renderPivot.x + breakPointFrameSize.x + (kMaxLineNumWidth - kCurrLineNumWidth) + _lineNumLeftSpacing);
+                        ImGui::SetCursorPosX(renderPivot.x + breakPointFrameSize.x + (kMaxLineNumRenderingWidth - kCurrLineNumRenderingWidth) + _lineNumLeftSpacing);
                         ImGui::SetCursorPosY(renderPivot.y - 0.0f);
 
                         ImVec2 lineNumPos = ImGui::GetCursorScreenPos();
@@ -597,7 +640,14 @@ void TextEditor::renderEditor(ImVec2 editorFrameSize)
                         strBackIter = std::format_to(strBuffer.begin(), "{}", lineIdx + 1);
                         *strBackIter = '\0';
 
-                        childDrawList->AddText(lineNumPos, IM_COL32_WHITE, strBuffer.data());
+                        if (lineIdx != _finalCursorCoord.lineNum)
+                        {
+                            childDrawList->AddText(lineNumPos, IM_COL32_WHITE, strBuffer.data());
+                        }
+                        else
+                        {
+                            childDrawList->AddText(lineNumPos, IM_COL32(255, 0, 0, 255), strBuffer.data());
+                        }
                     }
 
                     // Update
@@ -667,10 +717,14 @@ void TextEditor::handleMainEditorKeyboardInputs()
 
 void TextEditor::handleMainEditorMouseInputs()
 {
-    ImGuiIO& io = ImGui::GetIO();
-    
-    LineCoordinate lineCoordinate = this->convertMousePosToLineCoordinate(ImGui::GetMousePos());
+    ImGuiIO& io       = ImGui::GetIO();
+    ImVec2   mousePos = ImGui::GetMousePos();
 
+    // mousePosCoord is a sanitized variable
+    LineCoordinate mousePosCoord = this->convertScreenPosToLineCoordinate(mousePos);
+
+    bool isMousePosInFrame = this->isScreenPosInMainEditorFrame(mousePos);
+    
     /**
      * deactivate mouse event
      */
@@ -687,18 +741,25 @@ void TextEditor::handleMainEditorMouseInputs()
      */
     if (_mouseEventOnGoing)
     {
+        if (false == ImGui::IsMouseDragging(ImGuiMouseButton_Left))
+            return;
+
         // mouse cursor
         ImGui::SetMouseCursor(ImGuiMouseCursor_TextInput);
         
-        if (this->isMousePosInMainEditorFrame())
-        {
+        _temporaryTextSelection.end = mousePosCoord;
 
-        }
-        else // out of the main editor frame(needed to scroll by code)
-        {
+        _finalTextSelection = this->convertToFinalTextSelection(_temporaryTextSelection, _textSelectionMode);
+        _finalCursorCoord   = this->convertToCursorCoordinate(_temporaryTextSelection, _textSelectionMode);;
 
-        }
+        _temporaryCursorCoord = _finalCursorCoord;
         
+        // out of the main editor frame(needed to scroll by code)
+        if (false == isMousePosInFrame)
+        {
+
+        }
+
         return;
     }
 
@@ -725,11 +786,13 @@ void TextEditor::handleMainEditorMouseInputs()
             }
         }
 
-        // check click same coordinate
+        // check multiple click event but different coordinate
         if (leftButtonDoubleClicked || leftButtonTripleClicked)
         {
-            if ()
+            if (_firstClickedMousePosCoord != mousePosCoord)
             {
+                _lastLeftButtonDoubleClickedTime = -10.0;
+
                 leftButtonDoubleClicked = false;
                 leftButtonTripleClicked = false;
 
@@ -740,261 +803,84 @@ void TextEditor::handleMainEditorMouseInputs()
         _mouseEventOnGoing = leftButtonClicked || leftButtonDoubleClicked || leftButtonTripleClicked;
 
         // mouse cursor
-        if (this->isMousePosInMainEditorFrame() /* !(is in selection) */)
+        if (isMousePosInFrame /* && !(is in selection) */)
         {
             ImGui::SetMouseCursor(ImGuiMouseCursor_TextInput);
         }
 
         if (leftButtonTripleClicked)
         {
+            if (_leftButtonClickedShiftPressed || _leftButtonClickedCtrlPressed)
+            {
+                // keep leftButtonClicked event
+            }
+            else // if (_firstClickedMousePosCoord == mousePosCoord) // see above "if (_firstClickedMousePosCoord != mousePosCoord) { ... }"
+            {
+                _textSelectionMode = TextSelectionMode::Line;
+            }
+            
+            _finalTextSelection = this->convertToFinalTextSelection(_temporaryTextSelection, _textSelectionMode);
+            _finalCursorCoord   = this->convertToCursorCoordinate(_temporaryTextSelection, _textSelectionMode);;
 
-
+            _temporaryCursorCoord = _finalCursorCoord;
         }
         else if (leftButtonDoubleClicked)
         {
             _lastLeftButtonDoubleClickedTime = _currMainTime;
 
-            if (_leftButtonClickedShiftPressed && _leftButtonClickedCtrlPressed)
+            if (_leftButtonClickedShiftPressed || _leftButtonClickedCtrlPressed)
             {
                 // keep leftButtonClicked event
             }
-            else if (_leftButtonClickedShiftPressed)
+            else // if (_firstClickedMousePosCoord == mousePosCoord) // see above "if (_firstClickedMousePosCoord != mousePosCoord) { ... }"
             {
-                // keep leftButtonClicked event
-            }
-            else if (_leftButtonClickedCtrlPressed)
-            {
-                // keep leftButtonClicked event
-            }
-            else
-            {
-                _temporaryTextSelection.start = _cursorCoord;
-                _temporaryTextSelection.end   = _cursorCoord;
-
                 _textSelectionMode = TextSelectionMode::Word;
             }
-
+            
             _finalTextSelection = this->convertToFinalTextSelection(_temporaryTextSelection, _textSelectionMode);
-            _cursorCoord        = this->convertToCursorCoordinate(_temporaryTextSelection, _textSelectionMode);
+            _finalCursorCoord   = this->convertToCursorCoordinate(_temporaryTextSelection, _textSelectionMode);
+
+            _temporaryCursorCoord = _finalCursorCoord;
         }
         else if (leftButtonClicked)
         {
             _leftButtonClickedShiftPressed = io.KeyShift;
             _leftButtonClickedCtrlPressed  = io.KeyCtrl;
             _leftButtonClickedAltPressed   = io.KeyAlt;
-            
-            if (_leftButtonClickedShiftPressed && _leftButtonClickedCtrlPressed)
+
+            _firstClickedMousePosCoord = mousePosCoord;
+
+            // Shift
+            if (_leftButtonClickedShiftPressed)
             {
-                _temporaryTextSelection.end = _cursorCoord;
-
-                _textSelectionMode = TextSelectionMode::Word;
-
+                _temporaryTextSelection.end = _firstClickedMousePosCoord;
             }
-            else if (_leftButtonClickedShiftPressed)
+            else
             {
-                _temporaryTextSelection.end = _cursorCoord;
-
-                _textSelectionMode = TextSelectionMode::Simple;
+                _temporaryTextSelection.start = _firstClickedMousePosCoord;
+                _temporaryTextSelection.end   = _firstClickedMousePosCoord;
             }
-            else if (_leftButtonClickedCtrlPressed)
-            {
-                _temporaryTextSelection.start = _cursorCoord;
-                _temporaryTextSelection.end   = _cursorCoord;
 
+            // Ctrl
+            if (_leftButtonClickedCtrlPressed)
+            {
                 _textSelectionMode = TextSelectionMode::Word;
             }
             else
             {
-                _temporaryTextSelection.start = _cursorCoord;
-                _temporaryTextSelection.end   = _cursorCoord;
-
                 _textSelectionMode = TextSelectionMode::Simple;
             }
 
             _finalTextSelection = this->convertToFinalTextSelection(_temporaryTextSelection, _textSelectionMode);
-            _cursorCoord        = this->convertToCursorCoordinate(_temporaryTextSelection, _textSelectionMode);
+            _finalCursorCoord   = this->convertToCursorCoordinate(_temporaryTextSelection, _textSelectionMode);;
+
+            _temporaryCursorCoord     = _finalCursorCoord;
+            _temporaryDistanceLineNum = 0;
         }
-    }
-
-    if (ImGui::IsWindowHovered())
-    {
-        // bool leftButtonClicked       = ImGui::IsMouseClicked(ImGuiMouseButton_Left);
-        // bool leftButtonDoubleClicked = ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left);
-        // bool leftButtonTripleClicked = false;
-        // 
-        // if (this->isMousePosInMainEditorFrame() /* && !(is in selection) */)
-        // {
-        //     ImGui::SetMouseCursor(ImGuiMouseCursor_TextInput);
-        // }
-        // 
-        // // triple click possibility
-        // if (leftButtonClicked && false == leftButtonDoubleClicked && -1.0 != _lastLeftButtonDoubleClickedTime)
-        // {
-        //     if (_currMainTime - _lastLeftButtonDoubleClickedTime < io.MouseDoubleClickTime)
-        //     {
-        //         leftButtonTripleClicked = true;
-        //     }
-        // }
-
-        // /**
-        //  * Dragging Events(** Customize yourself! **)
-        //  */
-        // if (ImGui::IsMouseDragging(ImGuiMouseButton_Left) && ImGui::IsMouseDown(ImGuiMouseButton_Left))
-        // {
-        //     if (shiftPressed && ctrlPressed)
-        //     {
-        // 
-        //     }
-        //     else if (shiftPressed)
-        //     {
-        //         // Simple
-        //     }
-        //     else if (ctrlPressed)
-        //     {
-        //         // Word
-        //     }
-        //     else
-        //     {
-        //         // Simple
-        //     }
-        // 
-        //     // _cursorCoord = this->convertToCursorCoordinate(lineCoordinate);
-        // }
-        // 
-        // /**
-        //  * Click Events(** Customize yourself! **)
-        //  */
-        // else if (leftButtonTripleClicked)
-        // {
-        //     if (shiftPressed && ctrlPressed)
-        //     {
-        // 
-        //     }
-        //     else if (shiftPressed)
-        //     {
-        //         // Simple
-        //     }
-        //     else if (ctrlPressed)
-        //     {
-        // 
-        //     }
-        //     else
-        //     {
-        //         // Line
-        //     }
-        // 
-        //     _lastLeftButtonClickedTime = -1.0;
-        // }
-        // else if (leftButtonDoubleClicked)
-        // {
-        //     if (shiftPressed && ctrlPressed)
-        //     {
-        // 
-        //     }
-        //     else if (shiftPressed)
-        //     {
-        // 
-        //     }
-        //     else if (ctrlPressed)
-        //     {
-        // 
-        //     }
-        //     else
-        //     {
-        // 
-        //     }
-        // 
-        //     _lastLeftButtonClickedTime = _currMainTime;
-        // }
-        // else if (leftButtonClicked)
-        // {
-        //     _leftButtonClickedShiftPressed = io.KeyShift;
-        //     _leftButtonClickedCtrlPressed  = io.KeyCtrl;
-        //     _leftButtonClickedAltPressed   = io.KeyAlt;
-        // 
-        //     if (shiftPressed && ctrlPressed)
-        //     {
-        // 
-        //     }
-        //     else if (shiftPressed)
-        //     {
-        // 
-        //     }
-        //     else if (ctrlPressed)
-        //     {
-        // 
-        //     }
-        //     else
-        //     {
-        // 
-        //     }
-        // 
-        //     _lastLeftButtonClickedTime = _currMainTime;
-        // }
-
-        // if (leftButtonTripleClicked)
-        // {
-        //     _cursorCoord = lineCoordinate;
-        // 
-        //     _temporaryTextSelection.start = _cursorCoord;
-        //     _temporaryTextSelection.end   = _cursorCoord;
-        // 
-        //     if (false == ctrlPressed)
-        //     {
-        //         _textSelectionMode = TextSelectionMode::Line;
-        //     }
-        //     else
-        //     {
-        // 
-        //     }
-        // 
-        //     _finalTextSelection = this->convertToFinalTextSelection(_temporaryTextSelection, _textSelectionMode);
-        // 
-        //     _lastLeftButtonClickedTime = -1.0;
-        // 
-        //     return;
-        // }
-        // else if (leftButtonDoubleClicked)
-        // {
-        //     _cursorCoord = lineCoordinate;
-        // 
-        //     // if (false == ctrlPressed) // 
-        //     // {
-        //     // 
-        //     // }
-        // 
-        //     _lastLeftButtonClickedTime = _currMainTime;
-        // 
-        //     return;
-        // }
-        // else if (leftButtonClicked)
-        // {
-        //     _cursorCoord = lineCoordinate;
-        // 
-        //     // if (ctrlPressed) // word selection
-        //     // {
-        //     // 
-        //     // }
-        //     // else // none selection(cursor only)
-        //     // {
-        //     // 
-        //     // }
-        // 
-        //     _lastLeftButtonClickedTime = _currMainTime;
-        // 
-        //     return;
-        // }
-        // 
-        // // dragging by the left button
-        // if (ImGui::IsMouseDragging(ImGuiMouseButton_Left) && ImGui::IsMouseDown(ImGuiMouseButton_Left))
-        // {
-        //     _cursorCoord = lineCoordinate;
-        // 
-        // }
     }
 }
 
-auto TextEditor::adjustCoordinate(const LineCoordinate& lineCoord) const -> LineCoordinate
+auto TextEditor::sanitizeCoordinate(const LineCoordinate& lineCoord) const -> LineCoordinate
 {
     LineCoordinate ret;
 
@@ -1036,7 +922,7 @@ auto TextEditor::isValidCoordinate(const LineCoordinate& lineCoord) const -> boo
     return true;
 }
 
-auto TextEditor::isMousePosInMainEditorFrame() const -> bool
+auto TextEditor::isScreenPosInMainEditorFrame(const ImVec2& screenPos) const -> bool
 {
     // ** when you are using scrolling and if you want to get the content height, you have to type the following code **
     // scrollY + ImGui::GetContentRegionMax().y
@@ -1049,13 +935,15 @@ auto TextEditor::isMousePosInMainEditorFrame() const -> bool
 
     ImVec2 mousePos = ImGui::GetMousePos();
 
+    if (mousePos.x > contentRegionRectMin.x && mousePos.x < contentRegionRectMax.x &&
+        mousePos.y > contentRegionRectMin.y && mousePos.y < contentRegionRectMax.y)
+    {
 #ifdef SHOW_MAIN_EDITOR_FRAME_RECT_WHEN_HOVERED
     ImGui::GetForegroundDrawList()->AddRect(contentRegionRectMin, contentRegionRectMax, IM_COL32(255, 0, 255, 255));
 #endif
 
-    if (mousePos.x > contentRegionRectMin.x && mousePos.x < contentRegionRectMax.x &&
-        mousePos.y > contentRegionRectMin.y && mousePos.y < contentRegionRectMax.y)
         return true;
+    }
 
     return false;
 }
@@ -1075,10 +963,10 @@ auto TextEditor::convertLineCoordinateToScreenPos(const LineCoordinate& lineCoor
     return screenPos;
 }
 
-auto TextEditor::convertMousePosToLineCoordinate(const ImVec2& mousePos) const -> LineCoordinate
+auto TextEditor::convertScreenPosToLineCoordinate(const ImVec2& screenPos) const -> LineCoordinate
 {
     ImVec2 startPos = this->getLineCoordinateScreenStartPos();
-    ImVec2 distance = mousePos - startPos;
+    ImVec2 distance = screenPos - startPos;
 
     int32_t lineNum = std::max(0, (int32_t)floor(distance.y / _lineHeight));
     int32_t column  = 0;
@@ -1106,12 +994,6 @@ auto TextEditor::convertMousePosToLineCoordinate(const ImVec2& mousePos) const -
         columnIdx++;
     }
 
-    // // reached to the last index
-    // if (columnIdx == textLine.text.size() && textLine.text.size() > 1)
-    // {
-    //     columnIdx--;
-    // }
-
 #ifdef SHOW_START_POS_OF_LINE_COORDINATE_WHEN_HOVERED
     ImGui::GetForegroundDrawList()->AddCircle(startPos, 5, IM_COL32(255, 0, 255, 255));
 #endif
@@ -1121,8 +1003,46 @@ auto TextEditor::convertMousePosToLineCoordinate(const ImVec2& mousePos) const -
 
 auto TextEditor::convertToFinalTextSelection(const TextSelection& textSelection, TextSelectionMode selectionMode) const -> TextSelection
 {
+    TextSelection finalTextSelection;
     
-    return textSelection;
+    if (textSelection.start < textSelection.end)
+    {
+        finalTextSelection.start = textSelection.start;
+        finalTextSelection.end   = textSelection.end;
+    }
+    else
+    {
+        finalTextSelection.start = textSelection.end;
+        finalTextSelection.end   = textSelection.start;
+    }
+
+    // TODO : UTF8 SUPPORT
+    switch (selectionMode)
+    {
+        case TextSelectionMode::Simple:
+        {
+
+            break;
+        }
+
+        case TextSelectionMode::Word:
+        {
+            // _finalTextSelection.start = this->findFirstCharFromWord();
+            // _finalTextSelection.end   = this->findLastCharFromWord();
+
+            break;
+        }
+
+        case TextSelectionMode::Line:
+        {
+            finalTextSelection.start = LineCoordinate{ finalTextSelection.start.lineNum, 0 };
+            finalTextSelection.end   = LineCoordinate{ finalTextSelection.end.lineNum, (int32_t)_textLines[finalTextSelection.end.lineNum].text.size() };
+
+            break;
+        }
+    }
+
+    return finalTextSelection;
 }
 
 auto TextEditor::convertToCursorCoordinate(const TextSelection& textSelection, TextSelectionMode selectionMode) const -> LineCoordinate
@@ -1131,34 +1051,34 @@ auto TextEditor::convertToCursorCoordinate(const TextSelection& textSelection, T
     return textSelection.end;
 }
 
-void TextEditor::calcAllTextLineSizes()
+void TextEditor::calcAllTextLineRenderingSizes()
 {
     for (int32_t lineIdx = 0; lineIdx < _textLines.size(); lineIdx++)
     {
-        this->calcTextLineSize(lineIdx);
+        this->calcTextLineRenderingSize(lineIdx);
     }
 }
 
-void TextEditor::calcTextLineSize(int32_t lineIdx)
+void TextEditor::calcTextLineRenderingSize(int32_t lineIdx)
 {
     _textBuffer.clear();
     _textLines[lineIdx].cumulativeCharWidths.clear();
     //_textLines[lineIdx].charXPivots.clear();
 
-    ImVec2 lastSize = _currFont->CalcTextSizeA(_currFont->FontSize, FLT_MAX, 0.0f, "");
+    ImVec2 lastRenderingSize = _currFont->CalcTextSizeA(_currFont->FontSize, FLT_MAX, 0.0f, "");
 
     // TODO : UTF8 SUPPORT
     for (auto& charInfo : _textLines[lineIdx].text)
     {
         _textBuffer.push_back(charInfo.ch);
 
-        lastSize = _currFont->CalcTextSizeA(_currFont->FontSize, FLT_MAX, 0.0f, _textBuffer.c_str());
+        lastRenderingSize = _currFont->CalcTextSizeA(_currFont->FontSize, FLT_MAX, 0.0f, _textBuffer.c_str());
 
-        _textLines[lineIdx].cumulativeCharWidths.push_back(lastSize.x);
-        //_textLines[lineIdx].charXPivots.push_back(lastSize.x);
+        _textLines[lineIdx].cumulativeCharWidths.push_back(lastRenderingSize.x);
+        //_textLines[lineIdx].charXPivots.push_back(lastRenderingSize.x);
     }
 
-    _textLines[lineIdx].width = lastSize.x;
+    _textLines[lineIdx].renderingWidth = lastRenderingSize.x;
 }
 
 void TextEditor::updateAdditionalLineNums()
@@ -1171,32 +1091,32 @@ void TextEditor::updateAdditionalLineNums()
 
         _lineNums.back().numStr = std::to_string(lineNum);
 
-        this->calcLineNumSize(lineNum - 1); // idx = num - 1
+        this->calcLineNumRenderingSize(lineNum - 1); // idx = num - 1
     }
 
     _deferredUpdate_additionalLineNumIndices.clear();
 }
 
-void TextEditor::calcAllLineNumSizes()
+void TextEditor::calcAllLineNumRenderingSizes()
 {
     for (int32_t lineIdx = 0; lineIdx < _textLines.size(); lineIdx++)
     {
-        this->calcLineNumSize(lineIdx);
+        this->calcLineNumRenderingSize(lineIdx);
     }
 }
 
-void TextEditor::calcLineNumSize(int32_t lineIdx)
+void TextEditor::calcLineNumRenderingSize(int32_t lineIdx)
 {
-    _lineNums[lineIdx].width = _currFont->CalcTextSizeA(_currFont->FontSize, FLT_MAX, 0.0f, _lineNums[lineIdx].numStr.c_str()).x;
+    _lineNums[lineIdx].renderingWidth = _currFont->CalcTextSizeA(_currFont->FontSize, FLT_MAX, 0.0f, _lineNums[lineIdx].numStr.c_str()).x;
 }
 
-auto TextEditor::getMaxTextLineWidth() const -> float
+auto TextEditor::getMaxTextLineRenderingWidth() const -> float
 {
     float maxTextLineWidth = 0;
 
     for (int32_t lineIdx = 0; lineIdx < _textLines.size(); lineIdx++)
     {
-        maxTextLineWidth = std::max(maxTextLineWidth, _textLines[lineIdx].width);
+        maxTextLineWidth = std::max(maxTextLineWidth, _textLines[lineIdx].renderingWidth);
     }
 
     return maxTextLineWidth;
@@ -1206,7 +1126,7 @@ auto TextEditor::getMainContentRegionFullSize() const -> ImVec2
 {
     ImVec2 contentRegionFullSize;
 
-    float maxTextLineWidth = this->getMaxTextLineWidth();
+    float maxTextLineWidth = this->getMaxTextLineRenderingWidth();
 
     contentRegionFullSize.x = maxTextLineWidth + (_mainContentPadding.x * 2.0f) + _textLineLeftSpacing + _textLineRightSpacing;
     contentRegionFullSize.y = _textLines.size() * _lineHeight + (_mainContentPadding.y * 2.0f);
@@ -1214,13 +1134,13 @@ auto TextEditor::getMainContentRegionFullSize() const -> ImVec2
     return contentRegionFullSize;
 }
 
-auto TextEditor::getMaxLineNumWidth() const -> float
+auto TextEditor::getMaxLineNumRenderingWidth() const -> float
 {
     std::string_view maxLineNumStr = _lineNums.back().numStr;
 
-    float maxLineNumWidth = _currFont->CalcTextSizeA(_currFont->FontSize, FLT_MAX, 0.0f, maxLineNumStr.data()).x;
+    float maxLineNumRenderingWidth = _currFont->CalcTextSizeA(_currFont->FontSize, FLT_MAX, 0.0f, maxLineNumStr.data()).x;
 
-    return maxLineNumWidth;
+    return maxLineNumRenderingWidth;
 }
 
 void TextEditor::SetText(const std::string_view& text)
@@ -1236,8 +1156,10 @@ void TextEditor::SetText(const std::string_view& text)
     _finalTextSelection.start = LineCoordinate{ 0, 0 };
     _finalTextSelection.end   = LineCoordinate{ 0, 0 };
 
-    _temporaryCursorCoord = LineCoordinate{ 0, 0 };
-    _finalCursorCoord     = LineCoordinate{ 0, 0 };
+    _temporaryCursorCoord     = LineCoordinate{ 0, 0 };
+    _temporaryDistanceLineNum = 0;
+
+    _finalCursorCoord = LineCoordinate{ 0, 0 };
 
     // TODO : UTF8 SUPPORT
     for (auto ch : text)
@@ -1279,5 +1201,5 @@ void TextEditor::SetText(const std::string_view& text)
         }
     }
 
-    _deferredUpdate_calcAllTextLineSizes = true;
+    _deferredUpdate_calcAllTextLineRenderingSizes = true;
 }
