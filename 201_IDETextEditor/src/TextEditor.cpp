@@ -462,7 +462,7 @@ void TextEditor::renderEditor(ImVec2 editorFrameSize)
             {
                 for (int32_t column = 0; column <= _textLines[lineIdx].text.size(); column++)
                 {
-                    ImVec2 startPos = this->convertLineCoordinateToScreenPos({ lineIdx, column }) + ImVec2{ 0.0f, _textLineTopSpacing };
+                    ImVec2 startPos = this->convertLineCoordToScreenPos({ lineIdx, column }) + ImVec2{ 0.0f, _textLineTopSpacing };
                     ImVec2 endPos   = startPos + ImVec2{ 0.0f, kFontHeight };
 
                     childDrawList->AddLine(startPos, endPos, IM_COL32(0, 255, 0, 100));
@@ -481,7 +481,7 @@ void TextEditor::renderEditor(ImVec2 editorFrameSize)
                 {
                     if (nextCoord.lineNum < _finalTextSelection.end.lineNum)
                     {
-                        ImVec2 rectMin = this->convertLineCoordinateToScreenPos(currCoord);
+                        ImVec2 rectMin = this->convertLineCoordToScreenPos(currCoord);
                         ImVec2 rectMax = rectMin + ImVec2{ kSpaceWidth, _lineHeight };
 
                         childDrawList->AddRectFilled(rectMin, rectMax, IM_COL32(0, 255, 0, 100));
@@ -495,8 +495,8 @@ void TextEditor::renderEditor(ImVec2 editorFrameSize)
 
                 if (_textLines[nextCoord.lineNum].text.size())
                 {
-                    ImVec2 rectMin = this->convertLineCoordinateToScreenPos(currCoord);
-                    ImVec2 rectMax = this->convertLineCoordinateToScreenPos(nextCoord) + ImVec2{ 0.0f, _lineHeight };
+                    ImVec2 rectMin = this->convertLineCoordToScreenPos(currCoord);
+                    ImVec2 rectMax = this->convertLineCoordToScreenPos(nextCoord) + ImVec2{ 0.0f, _lineHeight };
 
                     childDrawList->AddRectFilled(rectMin, rectMax, IM_COL32(0, 255, 0, 100));
                 }
@@ -516,7 +516,7 @@ void TextEditor::renderEditor(ImVec2 editorFrameSize)
 
                 if (focused)
                 {
-                    ImVec2 startPos = this->convertLineCoordinateToScreenPos(_finalCursorCoord);
+                    ImVec2 startPos = this->convertLineCoordToScreenPos(_finalCursorCoord);
                     ImVec2 endPos   = startPos + ImVec2{ 0.0f, _lineHeight };
 
                     childDrawList->AddLine(startPos, endPos, IM_COL32(220, 220, 220, 255));
@@ -721,7 +721,7 @@ void TextEditor::handleMainEditorMouseInputs()
     ImVec2   mousePos = ImGui::GetMousePos();
 
     // mousePosCoord is a sanitized variable
-    LineCoordinate mousePosCoord = this->convertScreenPosToLineCoordinate(mousePos);
+    LineCoordinate mousePosCoord = this->convertScreenPosToLineCoord(mousePos);
 
     bool isMousePosInFrame = this->isScreenPosInMainEditorFrame(mousePos);
     
@@ -750,7 +750,7 @@ void TextEditor::handleMainEditorMouseInputs()
         _temporaryTextSelection.end = mousePosCoord;
 
         _finalTextSelection = this->convertToFinalTextSelection(_temporaryTextSelection, _textSelectionMode);
-        _finalCursorCoord   = this->convertToCursorCoordinate(_temporaryTextSelection, _textSelectionMode);;
+        _finalCursorCoord   = this->convertToCursorCoord(_temporaryTextSelection, _textSelectionMode);;
 
         _temporaryCursorCoord = _finalCursorCoord;
         
@@ -820,7 +820,7 @@ void TextEditor::handleMainEditorMouseInputs()
             }
             
             _finalTextSelection = this->convertToFinalTextSelection(_temporaryTextSelection, _textSelectionMode);
-            _finalCursorCoord   = this->convertToCursorCoordinate(_temporaryTextSelection, _textSelectionMode);;
+            _finalCursorCoord   = this->convertToCursorCoord(_temporaryTextSelection, _textSelectionMode);;
 
             _temporaryCursorCoord = _finalCursorCoord;
         }
@@ -838,7 +838,7 @@ void TextEditor::handleMainEditorMouseInputs()
             }
             
             _finalTextSelection = this->convertToFinalTextSelection(_temporaryTextSelection, _textSelectionMode);
-            _finalCursorCoord   = this->convertToCursorCoordinate(_temporaryTextSelection, _textSelectionMode);
+            _finalCursorCoord   = this->convertToCursorCoord(_temporaryTextSelection, _textSelectionMode);
 
             _temporaryCursorCoord = _finalCursorCoord;
         }
@@ -872,7 +872,7 @@ void TextEditor::handleMainEditorMouseInputs()
             }
 
             _finalTextSelection = this->convertToFinalTextSelection(_temporaryTextSelection, _textSelectionMode);
-            _finalCursorCoord   = this->convertToCursorCoordinate(_temporaryTextSelection, _textSelectionMode);;
+            _finalCursorCoord   = this->convertToCursorCoord(_temporaryTextSelection, _textSelectionMode);;
 
             _temporaryCursorCoord     = _finalCursorCoord;
             _temporaryDistanceLineNum = 0;
@@ -880,7 +880,7 @@ void TextEditor::handleMainEditorMouseInputs()
     }
 }
 
-auto TextEditor::sanitizeCoordinate(const LineCoordinate& lineCoord) const -> LineCoordinate
+auto TextEditor::sanitizeCoord(const LineCoordinate& lineCoord) const -> LineCoordinate
 {
     LineCoordinate ret;
 
@@ -901,7 +901,7 @@ auto TextEditor::sanitizeCoordinate(const LineCoordinate& lineCoord) const -> Li
     return ret;
 }
 
-auto TextEditor::getLineCoordinateScreenStartPos() const -> ImVec2
+auto TextEditor::getLineCoordScreenStartPos() const -> ImVec2
 {
     // ImVec2 screenStartPos = ImGui::GetCursorScreenPos() + _mainContentPadding + ImVec2{ _textLineLeftSpacing, 0.0f };
     ImVec2 screenStartPos = ImGui::GetWindowPos() + ImGui::GetWindowContentRegionMin() + _mainContentPadding + ImVec2{ _textLineLeftSpacing, 0.0f };
@@ -909,7 +909,7 @@ auto TextEditor::getLineCoordinateScreenStartPos() const -> ImVec2
     return screenStartPos;
 }
 
-auto TextEditor::isValidCoordinate(const LineCoordinate& lineCoord) const -> bool
+auto TextEditor::isValidCoord(const LineCoordinate& lineCoord) const -> bool
 {
     // Rows
     if (lineCoord.lineNum < 0 || lineCoord.lineNum >= _textLines.size())
@@ -920,6 +920,30 @@ auto TextEditor::isValidCoordinate(const LineCoordinate& lineCoord) const -> boo
         return false;
 
     return true;
+}
+
+auto TextEditor::findFirstCharCoordFromCoord(const LineCoordinate& lineCoord) const -> LineCoordinate
+{
+    const TextLine& textLine = _textLines[lineCoord.lineNum];
+
+    // TODO : tokenize textLine to tokens
+
+    LineCoordinate charCoord = lineCoord;
+
+    charCoord.column = 0;
+
+    // // last index
+    // if (charCoord.column == textLine.text.size())
+    // {
+    // 
+    // }
+
+    return charCoord;
+}
+
+auto TextEditor::findLastCharCoordFromCoord(const LineCoordinate& lineCoord) const -> LineCoordinate
+{
+    return lineCoord;
 }
 
 auto TextEditor::isScreenPosInMainEditorFrame(const ImVec2& screenPos) const -> bool
@@ -948,9 +972,9 @@ auto TextEditor::isScreenPosInMainEditorFrame(const ImVec2& screenPos) const -> 
     return false;
 }
 
-auto TextEditor::convertLineCoordinateToScreenPos(const LineCoordinate& lineCoord) const -> ImVec2
+auto TextEditor::convertLineCoordToScreenPos(const LineCoordinate& lineCoord) const -> ImVec2
 {
-    ImVec2 screenPos = this->getLineCoordinateScreenStartPos();
+    ImVec2 screenPos = this->getLineCoordScreenStartPos();
     {
         screenPos.y += lineCoord.lineNum * _lineHeight;
     }
@@ -963,9 +987,9 @@ auto TextEditor::convertLineCoordinateToScreenPos(const LineCoordinate& lineCoor
     return screenPos;
 }
 
-auto TextEditor::convertScreenPosToLineCoordinate(const ImVec2& screenPos) const -> LineCoordinate
+auto TextEditor::convertScreenPosToLineCoord(const ImVec2& screenPos) const -> LineCoordinate
 {
-    ImVec2 startPos = this->getLineCoordinateScreenStartPos();
+    ImVec2 startPos = this->getLineCoordScreenStartPos();
     ImVec2 distance = screenPos - startPos;
 
     int32_t lineNum = std::max(0, (int32_t)floor(distance.y / _lineHeight));
@@ -1027,8 +1051,8 @@ auto TextEditor::convertToFinalTextSelection(const TextSelection& textSelection,
 
         case TextSelectionMode::Word:
         {
-            // _finalTextSelection.start = this->findFirstCharFromWord();
-            // _finalTextSelection.end   = this->findLastCharFromWord();
+            finalTextSelection.start = this->findFirstCharCoordFromCoord(finalTextSelection.start);
+            finalTextSelection.end   = this->findLastCharCoordFromCoord(finalTextSelection.end);
 
             break;
         }
@@ -1045,7 +1069,7 @@ auto TextEditor::convertToFinalTextSelection(const TextSelection& textSelection,
     return finalTextSelection;
 }
 
-auto TextEditor::convertToCursorCoordinate(const TextSelection& textSelection, TextSelectionMode selectionMode) const -> LineCoordinate
+auto TextEditor::convertToCursorCoord(const TextSelection& textSelection, TextSelectionMode selectionMode) const -> LineCoordinate
 {
 
     return textSelection.end;
@@ -1061,24 +1085,24 @@ void TextEditor::calcAllTextLineRenderingSizes()
 
 void TextEditor::calcTextLineRenderingSize(int32_t lineIdx)
 {
+    TextLine& textLine = _textLines[lineIdx];
+
     _textBuffer.clear();
-    _textLines[lineIdx].cumulativeCharWidths.clear();
-    //_textLines[lineIdx].charXPivots.clear();
+    textLine.cumulativeCharWidths.clear();
 
     ImVec2 lastRenderingSize = _currFont->CalcTextSizeA(_currFont->FontSize, FLT_MAX, 0.0f, "");
 
     // TODO : UTF8 SUPPORT
-    for (auto& charInfo : _textLines[lineIdx].text)
+    for (auto& charInfo : textLine.text)
     {
         _textBuffer.push_back(charInfo.ch);
 
         lastRenderingSize = _currFont->CalcTextSizeA(_currFont->FontSize, FLT_MAX, 0.0f, _textBuffer.c_str());
 
-        _textLines[lineIdx].cumulativeCharWidths.push_back(lastRenderingSize.x);
-        //_textLines[lineIdx].charXPivots.push_back(lastRenderingSize.x);
+        textLine.cumulativeCharWidths.push_back(lastRenderingSize.x);
     }
 
-    _textLines[lineIdx].renderingWidth = lastRenderingSize.x;
+    textLine.renderingWidth = lastRenderingSize.x;
 }
 
 void TextEditor::updateAdditionalLineNums()

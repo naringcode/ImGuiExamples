@@ -388,7 +388,7 @@ TextEditor::Coordinates TextEditor::FindWordStart(const Coordinates& aFrom) cons
 	while (cindex > 0 && isspace(line[cindex].mChar))
 		--cindex;
 
-	auto cstart = (PaletteIndex)line[cindex].mColorIndex;
+	auto cstart = (PaletteIndex)line[cindex].mColorIndex; // mColorIndex set by tokenizing
 	while (cindex > 0)
 	{
 		auto c = line[cindex].mChar;

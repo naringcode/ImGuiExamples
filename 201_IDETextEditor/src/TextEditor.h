@@ -167,12 +167,13 @@ private:
     /**
      * Coordinate
      */
-    auto sanitizeCoordinate(const LineCoordinate& lineCoord) const -> LineCoordinate;
+    auto sanitizeCoord(const LineCoordinate& lineCoord) const -> LineCoordinate;
 
-    auto getLineCoordinateScreenStartPos() const -> ImVec2;
-    auto isValidCoordinate(const LineCoordinate& lineCoord) const -> bool;
+    auto getLineCoordScreenStartPos() const -> ImVec2;
+    auto isValidCoord(const LineCoordinate& lineCoord) const -> bool;
 
-    // auto findFirstCharPosInWord()
+    auto findFirstCharCoordFromCoord(const LineCoordinate& lineCoord) const -> LineCoordinate;
+    auto findLastCharCoordFromCoord(const LineCoordinate& lineCoord) const -> LineCoordinate;
 
     /**
      * Mouse
@@ -183,11 +184,11 @@ private:
     /**
      * Converting
      */
-    auto convertLineCoordinateToScreenPos(const LineCoordinate& lineCoord) const -> ImVec2;
-    auto convertScreenPosToLineCoordinate(const ImVec2& screenPos) const -> LineCoordinate;
+    auto convertLineCoordToScreenPos(const LineCoordinate& lineCoord) const -> ImVec2;
+    auto convertScreenPosToLineCoord(const ImVec2& screenPos) const -> LineCoordinate;
 
     auto convertToFinalTextSelection(const TextSelection& textSelection, TextSelectionMode selectionMode) const -> TextSelection;
-    auto convertToCursorCoordinate(const TextSelection& textSelection, TextSelectionMode selectionMode) const -> LineCoordinate;
+    auto convertToCursorCoord(const TextSelection& textSelection, TextSelectionMode selectionMode) const -> LineCoordinate;
 
 private:
     /**
@@ -336,7 +337,7 @@ public:
 
     auto SetCursorCoordinate(const LineCoordinate& cursorCoord)
     {
-        _temporaryCursorCoord     = this->sanitizeCoordinate(cursorCoord);
+        _temporaryCursorCoord     = this->sanitizeCoord(cursorCoord);
         _temporaryDistanceLineNum = 0;
 
         _finalCursorCoord = _temporaryCursorCoord;
@@ -518,8 +519,8 @@ private:
     TextSelection _temporaryTextSelection; // metadata before conversion to _finalTextSelection
     TextSelection _finalTextSelection;     // finalized actual text selection used in the TextEditor
 
-    LineCoordinate _temporaryCursorCoord;     // cursor coordinate when left button is clicked once or keyboard event occurs like keyMoveLeft() or keyMoveRight()
-    int32_t        _temporaryDistanceLineNum; // line num distance for keyboard event keyEventUp() and keyMoveDown()
+    LineCoordinate _temporaryCursorCoord;         // cursor coordinate when left button is clicked once or keyboard event occurs like keyMoveLeft() or keyMoveRight()
+    int32_t        _temporaryDistanceLineNum = 0; // line num distance for keyboard event keyEventUp() and keyMoveDown()
 
     LineCoordinate _firstClickedMousePosCoord; // in order to check double click or triple click event
     LineCoordinate _finalCursorCoord;          // finalized actual cursor coordinate used in the TextEditor sometimes calculated from _temporaryCursorCoord and _temporaryDistanceLineNum
